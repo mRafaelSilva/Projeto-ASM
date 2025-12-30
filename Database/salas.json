@@ -1,0 +1,4 @@
+[
+  { "id": "Lab_5", "capacidade": 30, "recursos": ["PCs", "Projetor"] },
+  { "id": "Amf_A", "capacidade": 120, "recursos": ["Ar Condicionado", "Microfone"] }
+]

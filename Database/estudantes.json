@@ -1,0 +1,27 @@
+[
+  {
+    "id": 202301,
+    "nome": "Ana Silva",
+    "curso_id": "L-EI",
+    "ano_frequencia": 2,
+    "estatuto": "Regular",
+    "email": "ana.silva@univ.pt",
+    "curriculo": {
+      "aprovadas": [
+        { "id": "MAT1", "nota": 15, "data": "2024-02-10" },
+        { "id": "PROG1", "nota": 18, "data": "2024-02-15" },
+        { "id": "FIS1", "nota": 12, "data": "2024-07-05" }
+      ],
+      "inscricoes_ativas": ["ALGEBRA", "SO1"]
+    }
+  },
+  {
+    "id": 202302,
+    "nome": "Bruno Santos",
+    "curso_id": "L-G",
+    "ano_frequencia": 1,
+    "estatuto": "Trabalhador-Estudante",
+    "email": "bruno.santos@univ.pt",
+    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["ECON1"] }
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "L-EI": [
+    {
+      "id": "SO1",
+      "nome": "Sistemas Operativos",
+      "ects": 6,
+      "pre_requisitos": ["PROG1"],
+      "turnos": [
+        { "id": "T1", "dia": "Segunda", "inicio": "08:30", "fim": "10:30", "sala": "Lab_5", "vagas_ocupadas": 28, "vagas_totais": 30 },
+        { "id": "T2", "dia": "Quarta", "inicio": "14:00", "fim": "16:00", "sala": "Lab_2", "vagas_ocupadas": 15, "vagas_totais": 30 }
+      ]
+    },
+    {
+      "id": "ALGEBRA",
+      "nome": "Álgebra Linear",
+      "ects": 6,
+      "pre_requisitos": [],
+      "turnos": [
+        { "id": "T1", "dia": "Terça", "inicio": "09:00", "fim": "11:00", "sala": "Amf_A", "vagas_ocupadas": 55, "vagas_totais": 100 }
+      ]
+    }
+  ],
+  "L-G": [
+    {
+      "id": "ECON1",
+      "nome": "Economia I",
+      "ects": 6,
+      "pre_requisitos": [],
+      "turnos": [
+        { "id": "T1", "dia": "Segunda", "inicio": "09:00", "fim": "11:00", "sala": "Amf_B", "vagas_ocupadas": 40, "vagas_totais": 80 }
+      ]
+    }
+  ]
+}

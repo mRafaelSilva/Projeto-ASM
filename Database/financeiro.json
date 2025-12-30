@@ -1,0 +1,16 @@
+[
+  {
+    "estudante_id": 202301,
+    "saldo": 0.00,
+    "isento_taxas": false,
+    "historico_pagamentos": [
+      { "data": "2024-09-01", "valor": 120.00, "tipo": "Propina Setembro" }
+    ]
+  },
+  {
+    "estudante_id": 202302,
+    "saldo": -250.00,
+    "isento_taxas": false,
+    "historico_pagamentos": []
+  }
+]
