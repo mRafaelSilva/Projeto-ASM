@@ -36,6 +36,7 @@ class FinanceiroAgent(agent.Agent):
         t_req = Template()
         t_req.set_metadata("performative", "request")
         self.add_behaviour(self.PayDebtBehaviour(), t_req)
+        self.add_behaviour(self.AddDebtBehaviour(), t_req)
 
     # ---------- persistência ----------
     def _load_data(self):
@@ -273,5 +274,110 @@ class FinanceiroAgent(agent.Agent):
                 "debt_cleared": (not info_after["tem_divida"]),
                 "debt_valor_restante": info_after["valor_divida"],
                 "to_user": to_user
+            })
+            await self.send(reply)
+
+    class AddDebtBehaviour(behaviour.CyclicBehaviour):
+        """
+        Recebe:
+          performative = "request"
+          body: {"acao":"add_debt", "estudante_id":..., "valor": ...}
+
+        Responde:
+          - "inform" se processou
+          - "failure" se campos inválidos
+          - "refuse" se aluno não existe
+
+        Acrescenta valor À dívida do estudante (diminui o saldo).
+        """
+
+        async def run(self):
+            msg = await self.receive(timeout=10)
+            if not msg:
+                return
+
+            conteudo = self.agent._safe_decode_body(msg)
+            acao = conteudo.get("acao")
+
+            # Só tratamos requests de acrescentar dívida aqui
+            if acao != "add_debt":
+                return  # Deixa para outros comportamentos tratarem
+
+            estudante_id = self.agent._normalize_student_id(conteudo.get("estudante_id"))
+            valor = conteudo.get("valor")
+
+            if estudante_id is None or valor is None:
+                reply = msg.make_reply()
+                reply.set_metadata("performative", "failure")
+                reply.body = jsonpickle.encode({
+                    "error": "missing_fields",
+                    "required": ["acao", "estudante_id", "valor"]
+                })
+                await self.send(reply)
+                return
+
+            # Validar valor
+            try:
+                valor = float(valor)
+            except (TypeError, ValueError):
+                reply = msg.make_reply()
+                reply.set_metadata("performative", "failure")
+                reply.body = jsonpickle.encode({"error": "invalid_valor"})
+                await self.send(reply)
+                return
+
+            if valor <= 0:
+                reply = msg.make_reply()
+                reply.set_metadata("performative", "failure")
+                reply.body = jsonpickle.encode({"error": "valor_must_be_positive"})
+                await self.send(reply)
+                return
+
+            rec = self.agent._get_fin_record(estudante_id)
+            if not rec:
+                reply = msg.make_reply()
+                reply.set_metadata("performative", "refuse")
+                reply.body = jsonpickle.encode({
+                    "motivo": "estudante_nao_encontrado",
+                    "estudante_id": estudante_id
+                })
+                await self.send(reply)
+                return
+
+            info_before = self.agent._compute_debt_info(rec)
+
+            # Acrescenta dívida: diminui o saldo (saldo - valor)
+            saldo_atual = float(rec.get("saldo", 0))
+            saldo_novo = saldo_atual - valor
+            rec["saldo"] = round(saldo_novo, 2)
+
+            # Guardar no histórico
+            timestamp = datetime.now().isoformat(timespec="seconds")
+
+            hist = rec.get("historico_pagamentos")
+            novo_registo = {
+                "data": timestamp,
+                "valor": -valor,  # Negativo para indicar débito
+                "tipo": "Acréscimo de dívida"
+            }
+
+            if isinstance(hist, list):
+                hist.append(novo_registo)
+            else:
+                rec["historico_pagamentos"] = [novo_registo]
+
+            # Persistir
+            self.agent._save_data()
+
+            info_after = self.agent._compute_debt_info(rec)
+
+            reply = msg.make_reply()
+            reply.set_metadata("performative", "inform")
+            reply.body = jsonpickle.encode({
+                "debt_added": True,
+                "valor_acrescentado": valor,
+                "saldo_novo": rec["saldo"],
+                "tem_divida_agora": info_after["tem_divida"],
+                "valor_divida_total": info_after["valor_divida"],
             })
             await self.send(reply)
