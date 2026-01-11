@@ -9,8 +9,7 @@
     "curriculo": {
       "aprovadas": [
         { "id": "MAT1", "nota": 15, "data": "2024-02-10" },
-        { "id": "PROG1", "nota": 18, "data": "2024-02-15" },
-        { "id": "FIS1", "nota": 12, "data": "2024-07-05" }
+        { "id": "PROG1", "nota": 18, "data": "2024-02-15" }
       ],
       "inscricoes_ativas": ["ALGEBRA", "SO1"]
     }
@@ -23,5 +22,35 @@
     "estatuto": "Trabalhador-Estudante",
     "email": "bruno.santos@univ.pt",
     "curriculo": { "aprovadas": [], "inscricoes_ativas": ["ECON1"] }
+  },
+  {
+    "id": 12,
+    "nome": "João Teste",
+    "curso_id": "L-EI",
+    "ano_frequencia": 3,
+    "estatuto": "Regular",
+    "email": "joao.teste@univ.pt",
+    "curriculo": {
+      "aprovadas": [{ "id": "SO1", "nota": 10, "data": "2023-06-20" }],
+      "inscricoes_ativas": []
+    }
+  },
+  {
+    "id": 555,
+    "nome": "Maria Devedora",
+    "curso_id": "L-EI",
+    "ano_frequencia": 1,
+    "estatuto": "Regular",
+    "email": "maria.divida@univ.pt",
+    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["IA"] }
+  },
+  {
+    "id": 777,
+    "nome": "Carlos Rico",
+    "curso_id": "M-IA",
+    "ano_frequencia": 1,
+    "estatuto": "Regular",
+    "email": "carlos.rico@univ.pt",
+    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["ML"] }
   }
 ]

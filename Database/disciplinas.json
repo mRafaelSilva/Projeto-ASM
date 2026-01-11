@@ -6,8 +6,24 @@
       "ects": 6,
       "pre_requisitos": ["PROG1"],
       "turnos": [
-        { "id": "T1", "dia": "Segunda", "inicio": "08:30", "fim": "10:30", "sala": "Lab_5", "vagas_ocupadas": 28, "vagas_totais": 30 },
-        { "id": "T2", "dia": "Quarta", "inicio": "14:00", "fim": "16:00", "sala": "Lab_2", "vagas_ocupadas": 15, "vagas_totais": 30 }
+        {
+          "id": "T1",
+          "dia": "Segunda",
+          "inicio": "08:30",
+          "fim": "10:30",
+          "sala": "Lab_5",
+          "vagas_ocupadas": 28,
+          "vagas_totais": 30
+        },
+        {
+          "id": "T2",
+          "dia": "Quarta",
+          "inicio": "14:00",
+          "fim": "16:00",
+          "sala": "Lab_2",
+          "vagas_ocupadas": 15,
+          "vagas_totais": 30
+        }
       ]
     },
     {
@@ -16,7 +32,49 @@
       "ects": 6,
       "pre_requisitos": [],
       "turnos": [
-        { "id": "T1", "dia": "Terça", "inicio": "09:00", "fim": "11:00", "sala": "Amf_A", "vagas_ocupadas": 55, "vagas_totais": 100 }
+        {
+          "id": "T1",
+          "dia": "Terça",
+          "inicio": "09:00",
+          "fim": "11:00",
+          "sala": "Amf_A",
+          "vagas_ocupadas": 55,
+          "vagas_totais": 100
+        }
+      ]
+    },
+    {
+      "id": "MATEMATICA",
+      "nome": "Matemática Computacional",
+      "ects": 6,
+      "pre_requisitos": [],
+      "turnos": [
+        {
+          "id": "TP1",
+          "dia": "Sexta",
+          "inicio": "10:00",
+          "fim": "12:00",
+          "sala": "Amf_B",
+          "vagas_ocupadas": 10,
+          "vagas_totais": 50
+        }
+      ]
+    },
+    {
+      "id": "IA",
+      "nome": "Inteligência Artificial",
+      "ects": 6,
+      "pre_requisitos": ["ALGEBRA", "PROG1"],
+      "turnos": [
+        {
+          "id": "PL1",
+          "dia": "Quinta",
+          "inicio": "16:00",
+          "fim": "18:00",
+          "sala": "Lab_1",
+          "vagas_ocupadas": 20,
+          "vagas_totais": 20
+        }
       ]
     }
   ],
@@ -27,7 +85,51 @@
       "ects": 6,
       "pre_requisitos": [],
       "turnos": [
-        { "id": "T1", "dia": "Segunda", "inicio": "09:00", "fim": "11:00", "sala": "Amf_B", "vagas_ocupadas": 40, "vagas_totais": 80 }
+        {
+          "id": "T1",
+          "dia": "Segunda",
+          "inicio": "10:00",
+          "fim": "12:00",
+          "sala": "Amf_A",
+          "vagas_ocupadas": 90,
+          "vagas_totais": 120
+        }
+      ]
+    },
+    {
+      "id": "MARKETING",
+      "nome": "Marketing Digital",
+      "ects": 4,
+      "pre_requisitos": [],
+      "turnos": [
+        {
+          "id": "TP1",
+          "dia": "Quarta",
+          "inicio": "14:00",
+          "fim": "16:00",
+          "sala": "Sala_204",
+          "vagas_ocupadas": 5,
+          "vagas_totais": 40
+        }
+      ]
+    }
+  ],
+  "M-IA": [
+    {
+      "id": "ML",
+      "nome": "Machine Learning",
+      "ects": 10,
+      "pre_requisitos": [],
+      "turnos": [
+        {
+          "id": "T1",
+          "dia": "Sábado",
+          "inicio": "09:00",
+          "fim": "13:00",
+          "sala": "Lab_Remoto",
+          "vagas_ocupadas": 12,
+          "vagas_totais": 20
+        }
       ]
     }
   ]

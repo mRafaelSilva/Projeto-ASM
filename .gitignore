@@ -2,6 +2,9 @@
 .venv/
 venv/
 
+# Docker volume
+openfire_data
+
 # Python cache
 __pycache__/
 *.py[cod]

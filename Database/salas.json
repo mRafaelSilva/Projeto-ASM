@@ -1,4 +1,21 @@
 [
   { "id": "Lab_5", "capacidade": 30, "recursos": ["PCs", "Projetor"] },
-  { "id": "Amf_A", "capacidade": 120, "recursos": ["Ar Condicionado", "Microfone"] }
+  { "id": "Lab_2", "capacidade": 30, "recursos": ["PCs", "Quadro Interativo"] },
+  {
+    "id": "Lab_1",
+    "capacidade": 20,
+    "recursos": ["PCs de Alta Performance", "GPU Cluster"]
+  },
+  {
+    "id": "Amf_A",
+    "capacidade": 120,
+    "recursos": ["Ar Condicionado", "Microfone", "Projetor Duplo"]
+  },
+  { "id": "Amf_B", "capacidade": 50, "recursos": ["Projetor"] },
+  { "id": "Sala_204", "capacidade": 40, "recursos": ["Quadro Branco"] },
+  {
+    "id": "Lab_Remoto",
+    "capacidade": 20,
+    "recursos": ["Zoom Room", "Câmaras 360"]
+  }
 ]

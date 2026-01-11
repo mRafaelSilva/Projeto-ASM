@@ -1,3 +1,4 @@
+slixmpp<1.10
 aioconsole==0.8.2
 aiohttp==3.10.4
 jsonpickle==4.1.1

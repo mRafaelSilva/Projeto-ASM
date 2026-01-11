@@ -17,18 +17,16 @@ async def main():
     financeiro_agent = FinanceiroAgent(financeiro_jid, password)
     horarios_agent = HorariosAgent(horarios_jid, password)
 
-    await assistente_agent.start(auto_register=False)
-    await user_agent.start(auto_register=False)
-    await financeiro_agent.start(auto_register=False)
-    await horarios_agent.start(auto_register=False)
-
-    print("Agentes iniciados! (Ctrl+C para terminar)")
+    print("A iniciar agentes! (Ctrl+C para terminar)")
+    await assistente_agent.start(auto_register=True)
+    await financeiro_agent.start(auto_register=True)
+    await horarios_agent.start(auto_register=True)
+    await user_agent.start(auto_register=True)
 
     try:
         while True:
             await asyncio.sleep(1)
     except (KeyboardInterrupt, asyncio.CancelledError):
-        # CancelledError acontece quando o asyncio.run() cancela a task principal em Ctrl+C
         print("\nA terminar agentes...")
     finally:
         await asyncio.gather(
@@ -46,5 +44,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        # evita traceback do runner
         pass
