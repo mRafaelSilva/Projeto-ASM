@@ -1,4 +1,13 @@
 [
-  { "id": "L-EI", "nome": "Engenharia Informática", "coordenador": "Prof. Doutor Alan Turing" },
-  { "id": "L-G", "nome": "Gestão", "coordenador": "Prof. Dra. Adam Smith" }
+  {
+    "id": "L-EI",
+    "nome": "Engenharia Informática",
+    "coordenador": "Prof. Doutor Alan Turing"
+  },
+  { "id": "L-G", "nome": "Gestão", "coordenador": "Prof. Dra. Adam Smith" },
+  {
+    "id": "M-IA",
+    "nome": "Mestrado em Inteligência Artificial",
+    "coordenador": "Prof. John McCarthy"
+  }
 ]

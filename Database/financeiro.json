@@ -1,16 +1,49 @@
 [
   {
     "estudante_id": 202301,
-    "saldo": 0.00,
+    "saldo": 0.0,
     "isento_taxas": false,
     "historico_pagamentos": [
-      { "data": "2026-01-01T09:18:44", "valor": 120.00, "tipo": "Propina Setembro" }
+      {
+        "data": "2026-01-01T09:18:44",
+        "valor": 120.0,
+        "tipo": "Propina Setembro"
+      }
     ]
   },
   {
     "estudante_id": 202302,
-    "saldo": -250.00,
+    "saldo": -250.0,
     "isento_taxas": false,
+    "historico_pagamentos": []
+  },
+  {
+    "estudante_id": 12,
+    "saldo": 0.0,
+    "isento_taxas": false,
+    "historico_pagamentos": [
+      {
+        "data": "2025-12-01T10:00:00",
+        "valor": 50.0,
+        "tipo": "Inscrição"
+      },
+      {
+        "data": "2026-01-11T18:22:07",
+        "valor": 50.0,
+        "tipo": "Pagamento dívida (simulado)"
+      }
+    ]
+  },
+  {
+    "estudante_id": 555,
+    "saldo": -1500.0,
+    "isento_taxas": false,
+    "historico_pagamentos": []
+  },
+  {
+    "estudante_id": 777,
+    "saldo": 0.0,
+    "isento_taxas": true,
     "historico_pagamentos": []
   }
 ]

@@ -98,14 +98,20 @@ def normalizar_disciplinas(valor: Union[str, List[str], None]) -> List[str]:
 def extrair_intencao(texto: str) -> str:
     texto = (texto or "").lower()
 
+    if re.search(r"\b(ola|olá|oi|bom dia|boa tarde|boas)\b", texto):
+        return "saudacao"
+
     if re.search(r"\binscrev|inscri(?:c|ç)(?:a|ã)o\b", texto):
         return "inscricao"
 
     if re.search(r"\bhorar|horári|schedule\b", texto):
         return "horarios"
 
-    if re.search(r"\bpaga|propina|saldo|divida|dívida|finance\b", texto):
-        return "pagamentos"
+    if re.search(r"\b(paga|liquid|transfer)", texto):
+        return "fazer_pagamento"
+    
+    if re.search(r"\b(saldo|divida|dívida|quanto devo|propina|finance)\b", texto):
+        return "ver_saldo"
 
     return "desconhecida"
 

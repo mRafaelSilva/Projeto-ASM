@@ -1,94 +1,46 @@
 import asyncio
 import json
-from typing import Any, Dict, Optional
-
+from typing import Any, Dict, Optional, Set
 import jsonpickle
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
-
 import utils.utilsAssistente as utilsAssistente
 
 
 def _safe_decode_body(body: Optional[str]) -> dict:
-    # 1) jsonpickle (Horários / Financeiro)
     try:
         decoded = jsonpickle.decode(body)
-        if isinstance(decoded, dict):
-            return decoded
-    except Exception:
-        pass
-
-    # 2) JSON normal (UserAgent <-> Assistente)
+        if isinstance(decoded, dict): return decoded
+    except Exception: pass
     try:
         decoded = json.loads(body) if body else {}
         return decoded if isinstance(decoded, dict) else {}
-    except Exception:
-        return {}
+    except Exception: return {}
 
 
 class AssistenteAgent(Agent):
+    INTENTS_NO_FINANCIAL_CHECK: Set[str] = {"horarios", "ajuda", "saudacao"}
+
     def __init__(self, jid, password):
         super().__init__(jid, password)
         self._contexts: Dict[str, Dict[str, Any]] = {}
 
     async def setup(self):
-        self.add_behaviour(ReceiveUserRequestBehaviour())
-        self.add_behaviour(ReceiveInformBehaviour())
+        print(f"[Assistente] {str(self.jid)} iniciado.")
+        self.add_behaviour(self.ReceiveUserRequestBehaviour())
+        self.add_behaviour(self.ReceiveInformBehaviour())
 
     def _get_ctx(self, user_jid: str) -> Dict[str, Any]:
-        return self._contexts.setdefault(
-            user_jid,
-            {
-                "user_jid": user_jid,
-                "intencao": None,
-                "slots": {},
-                "pendente": None,      # para retomar após respostas de outros agentes
-                "awaiting": None,      # slot que estamos a pedir ao user
-            },
-        )
+        return self._contexts.setdefault(user_jid, {
+            "user_jid": user_jid, "intencao": None, "slots": {}, "pendente": None, "awaiting": None
+        })
 
+    # --- Helpers de Envio ---
     async def _ask_for_slot(self, behaviour: CyclicBehaviour, user_jid: str, slot_name: str):
         msg = Message(to=user_jid)
         msg.set_metadata("performative", "request")
-        msg.body = json.dumps(
-            {
-                "type": "ask",
-                "slot": slot_name,
-                "prompt": f"Por favor, indique: {slot_name}",
-            },
-            ensure_ascii=False,
-        )
-        await behaviour.send(msg)
-
-    async def _forward_to_horarios(self, behaviour: CyclicBehaviour, user_jid: str, curso: str, disciplinas: list):
-        msg = Message(to="horarios@localhost")
-        msg.set_metadata("performative", "request")
-        msg.body = jsonpickle.encode(
-            {
-                "acao": "check_schedule",
-                "curso": curso,
-                "disciplinas": disciplinas,
-                "to_user": user_jid,
-            }
-        )
-        await behaviour.send(msg)
-
-    async def _query_debt_to_financeiro(self, behaviour: CyclicBehaviour, user_jid: str, estudante_id: Any):
-        """
-        O FinanceiroAgent do vosso projeto responde a:
-          performative = "query-if"
-          body: {"acao":"has_debt","estudante_id":...}
-        """
-        msg = Message(to="financeiro@localhost")
-        msg.set_metadata("performative", "query-if")
-        msg.body = jsonpickle.encode(
-            {
-                "acao": "has_debt",
-                "estudante_id": estudante_id,
-                "to_user": user_jid,
-            }
-        )
+        msg.body = json.dumps({"type": "ask", "slot": slot_name, "prompt": f"Por favor, indique: {slot_name}"}, ensure_ascii=False)
         await behaviour.send(msg)
 
     async def _reply_to_user(self, behaviour: CyclicBehaviour, user_jid: str, payload: dict):
@@ -97,52 +49,27 @@ class AssistenteAgent(Agent):
         msg.body = json.dumps(payload, ensure_ascii=False)
         await behaviour.send(msg)
 
+    async def _query_debt_status(self, behaviour: CyclicBehaviour, user_jid: str, estudante_id: Any):
+        msg = Message(to="financeiro@localhost")
+        msg.set_metadata("performative", "query-if")
+        msg.body = jsonpickle.encode({"acao": "has_debt", "estudante_id": estudante_id, "to_user": user_jid})
+        await behaviour.send(msg)
 
-class ReceiveUserRequestBehaviour(CyclicBehaviour):
-    async def run(self):
-        msg = await self.receive(timeout=1)
-        if not msg:
-            return
+    async def _request_debt_payment(self, behaviour: CyclicBehaviour, user_jid: str, estudante_id: Any, valor: float):
+        msg = Message(to="financeiro@localhost")
+        msg.set_metadata("performative", "request")
+        msg.body = jsonpickle.encode({"acao": "pay_debt", "estudante_id": estudante_id, "valor": valor, "to_user": user_jid})
+        await behaviour.send(msg)
 
-        if msg.get_metadata("performative") != "request":
-            return
+    async def _forward_to_horarios(self, behaviour: CyclicBehaviour, user_jid: str, curso: str, disciplinas: list):
+        msg = Message(to="horarios@localhost")
+        msg.set_metadata("performative", "request")
+        msg.body = jsonpickle.encode({"acao": "check_schedule", "curso": curso, "disciplinas": disciplinas, "to_user": user_jid})
+        await behaviour.send(msg)
 
-        user_jid = str(msg.sender).split("/")[0]
-        ctx = self.agent._get_ctx(user_jid)
-
-        try:
-            data = json.loads(msg.body) if msg.body else {}
-        except Exception:
-            data = {}
-
-        texto = (data.get("texto") or "").strip()
-
-        intencao = utilsAssistente.get_intencao(texto)
-        slots_extraidos = utilsAssistente.extrair_slots(intencao, texto)
-
-        ctx["intencao"] = intencao
-        ctx["slots"].update(slots_extraidos)
-
-        # normalizações
-        if "curso" in ctx["slots"]:
-            ctx["slots"]["curso"] = utilsAssistente.normalizar_curso(ctx["slots"]["curso"])
-        if "disciplina" in ctx["slots"]:
-            ctx["slots"]["disciplina"] = utilsAssistente.normalizar_disciplinas(ctx["slots"]["disciplina"])
-
-        # ------------------- Fluxos -------------------
-
-        if intencao == "inscricao":
-            # precisa: numero_aluno, curso, disciplina
-            required = ["numero_aluno", "curso", "disciplina"]
-            missing = [k for k in required if not ctx["slots"].get(k)]
-            if missing:
-                ctx["awaiting"] = missing[0]
-                await self.agent._ask_for_slot(self, user_jid, missing[0])
-                return
-
-            # antes de avançar: verifica dívida
-            ctx["pendente"] = "inscricao_depois_divida"
-            await self.agent._query_debt_to_financeiro(self, user_jid, ctx["slots"]["numero_aluno"])
+    async def processar_intencao_negocio(self, behaviour: CyclicBehaviour, user_jid: str, intencao: str, ctx: dict):
+        if intencao == "saudacao":
+            await self._reply_to_user(behaviour, user_jid, {"msg": "Olá! Em que posso ajudar? (inscrições, horários, pagamentos)"})
             return
 
         if intencao == "horarios":
@@ -150,172 +77,194 @@ class ReceiveUserRequestBehaviour(CyclicBehaviour):
             missing = [k for k in required if not ctx["slots"].get(k)]
             if missing:
                 ctx["awaiting"] = missing[0]
-                await self.agent._ask_for_slot(self, user_jid, missing[0])
+                await self._ask_for_slot(behaviour, user_jid, missing[0])
                 return
-
-            curso = utilsAssistente.normalizar_curso(ctx["slots"]["curso"])
-            disciplinas = utilsAssistente.normalizar_disciplinas(ctx["slots"]["disciplina"])
-            ctx["slots"]["curso"] = curso
-            ctx["slots"]["disciplina"] = disciplinas
-
-            await self.agent._forward_to_horarios(self, user_jid, curso, disciplinas)
-            return
-
-        if intencao == "pagamentos":
-            required = ["numero_aluno"]
+            await self._forward_to_horarios(behaviour, user_jid, ctx["slots"]["curso"], ctx["slots"]["disciplina"])
+        
+        elif intencao == "inscricao":
+            required = ["curso", "disciplina"]
             missing = [k for k in required if not ctx["slots"].get(k)]
             if missing:
                 ctx["awaiting"] = missing[0]
-                await self.agent._ask_for_slot(self, user_jid, missing[0])
+                await self._ask_for_slot(behaviour, user_jid, missing[0])
                 return
+            await self._reply_to_user(behaviour, user_jid, {"ok": True, "msg": f"Inscrição realizada em {ctx['slots']['disciplina']}"})
+        
+        elif intencao == "desconhecida":
+             await self._reply_to_user(behaviour, user_jid, {"ok": False, "msg": "Não percebi. Tente 'inscrever em LEI', 'ver horario' ou 'pagar propina'."})
 
-            ctx["pendente"] = "pagamentos_depois_divida"
-            await self.agent._query_debt_to_financeiro(self, user_jid, ctx["slots"]["numero_aluno"])
-            return
-
-        # fallback
-        await self.agent._reply_to_user(
-            self,
-            user_jid,
-            {"ok": False, "erro": "intencao_desconhecida", "texto": texto, "intencao": intencao},
-        )
+        else:
+            await self._reply_to_user(behaviour, user_jid, {"ok": False, "erro": "intencao_nao_implementada", "intencao": intencao})
 
 
-class ReceiveInformBehaviour(CyclicBehaviour):
-    async def run(self):
-        msg = await self.receive(timeout=1)
-        if not msg:
-            return
+    # --- Behaviours ---
 
-        perf = msg.get_metadata("performative")
-        sender = str(msg.sender).split("/")[0]
+    class ReceiveUserRequestBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=1)
+            if not msg or msg.get_metadata("performative") != "request": return
 
-        # ------------------- Resposta do user (slot filling) -------------------
-        if sender.startswith("user@") and perf == "inform":
-            user_jid = sender
+            user_jid = str(msg.sender).split("/")[0]
             ctx = self.agent._get_ctx(user_jid)
+            
+            try: data = json.loads(msg.body) if msg.body else {}
+            except: data = {}
 
-            try:
-                data = json.loads(msg.body) if msg.body else {}
-            except Exception:
-                data = {}
+            texto = (data.get("texto") or "").strip()
+            intencao = utilsAssistente.get_intencao(texto)
+            ctx["intencao"] = intencao
+            ctx["slots"].update(utilsAssistente.extrair_slots(intencao, texto))
 
-            if data.get("type") != "answer":
-                return
+            if "curso" in ctx["slots"]: ctx["slots"]["curso"] = utilsAssistente.normalizar_curso(ctx["slots"]["curso"])
+            if "disciplina" in ctx["slots"]: ctx["slots"]["disciplina"] = utilsAssistente.normalizar_disciplinas(ctx["slots"]["disciplina"])
 
-            slot = ctx.get("awaiting")
-            valor = data.get("value")
-            if not slot:
-                return
-
-            if slot == "curso":
-                valor = utilsAssistente.normalizar_curso(valor)
-            if slot == "disciplina":
-                valor = utilsAssistente.normalizar_disciplinas(valor)
-
-            ctx["slots"][slot] = valor
-            ctx["awaiting"] = None
-
-            intencao = ctx.get("intencao")
-
-            if intencao == "inscricao":
-                required = ["numero_aluno", "curso", "disciplina"]
-                missing = [k for k in required if not ctx["slots"].get(k)]
-                if missing:
-                    ctx["awaiting"] = missing[0]
-                    await self.agent._ask_for_slot(self, user_jid, missing[0])
+            # Pagamentos
+            if intencao == "fazer_pagamento":
+                if not ctx["slots"].get("numero_aluno"):
+                    ctx["awaiting"] = "numero_aluno"
+                    await self.agent._ask_for_slot(self, user_jid, "numero_aluno")
                     return
-
-                ctx["pendente"] = "inscricao_depois_divida"
-                await self.agent._query_debt_to_financeiro(self, user_jid, ctx["slots"]["numero_aluno"])
-                return
-
-            if intencao == "horarios":
-                required = ["curso", "disciplina"]
-                missing = [k for k in required if not ctx["slots"].get(k)]
-                if missing:
-                    ctx["awaiting"] = missing[0]
-                    await self.agent._ask_for_slot(self, user_jid, missing[0])
+                if not ctx["slots"].get("valor"):
+                    ctx["awaiting"] = "valor"
+                    await self.agent._ask_for_slot(self, user_jid, "valor")
                     return
-
-                curso = utilsAssistente.normalizar_curso(ctx["slots"]["curso"])
-                disciplinas = utilsAssistente.normalizar_disciplinas(ctx["slots"]["disciplina"])
-                ctx["slots"]["curso"] = curso
-                ctx["slots"]["disciplina"] = disciplinas
-
-                await self.agent._forward_to_horarios(self, user_jid, curso, disciplinas)
+                await self.agent._request_debt_payment(self, user_jid, ctx["slots"]["numero_aluno"], ctx["slots"]["valor"])
                 return
 
-            if intencao == "pagamentos":
-                required = ["numero_aluno"]
-                missing = [k for k in required if not ctx["slots"].get(k)]
-                if missing:
-                    ctx["awaiting"] = missing[0]
-                    await self.agent._ask_for_slot(self, user_jid, missing[0])
+            # Ver Saldo
+            if intencao == "ver_saldo":
+                if not ctx["slots"].get("numero_aluno"):
+                    ctx["awaiting"] = "numero_aluno"
+                    ctx["pendente"] = "ver_saldo"
+                    await self.agent._ask_for_slot(self, user_jid, "numero_aluno")
                     return
-
-                ctx["pendente"] = "pagamentos_depois_divida"
-                await self.agent._query_debt_to_financeiro(self, user_jid, ctx["slots"]["numero_aluno"])
+                ctx["pendente"] = "ver_saldo"
+                await self.agent._query_debt_status(self, user_jid, ctx["slots"]["numero_aluno"])
                 return
 
-            return
+            # Intents Seguros
+            if intencao in self.agent.INTENTS_NO_FINANCIAL_CHECK:
+                await self.agent.processar_intencao_negocio(self, user_jid, intencao, ctx)
+                return
 
-        # ------------------- Respostas de outros agentes -------------------
-        if perf in ("inform", "propose", "failure", "refuse", "not-understood"):
+            # Intents Sensíveis -> Validar Dívida
+            if not ctx["slots"].get("numero_aluno"):
+                ctx["awaiting"] = "numero_aluno"
+                ctx["pendente"] = intencao 
+                await self.agent._ask_for_slot(self, user_jid, "numero_aluno")
+                return
+            
+            ctx["pendente"] = intencao
+            await self.agent._query_debt_status(self, user_jid, ctx["slots"]["numero_aluno"])
+
+
+    class ReceiveInformBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=1)
+            if not msg: return
+
+            perf = msg.get_metadata("performative")
+            sender = str(msg.sender).split("/")[0]
             data = _safe_decode_body(msg.body)
 
-            to_user = data.get("to_user")
-            if not to_user:
-                if self.agent._contexts:
-                    to_user = next(iter(self.agent._contexts.keys()))
-                else:
-                    return
+            # Resposta do User
+            if sender.startswith("user@") and perf == "inform":
+                if data.get("type") != "answer": return
 
-            ctx = self.agent._get_ctx(to_user)
+                user_jid = sender
+                ctx = self.agent._get_ctx(user_jid)
+                slot = ctx.get("awaiting")
+                valor = data.get("value")
+                
+                if slot:
+                    # Normalizações
+                    if slot == "curso": valor = utilsAssistente.normalizar_curso(valor)
+                    if slot == "disciplina": valor = utilsAssistente.normalizar_disciplinas(valor)
+                    if slot in ["numero_aluno", "valor"]: valor = str(valor).strip()
+                    
+                    ctx["slots"][slot] = valor
+                    ctx["awaiting"] = None
+                    pendente = ctx.get("pendente")
+                    
+                    # Se era Fazer Pagamento
+                    if ctx.get("intencao") == "fazer_pagamento":
+                        if not ctx["slots"].get("numero_aluno"):
+                            ctx["awaiting"] = "numero_aluno"
+                            await self.agent._ask_for_slot(self, user_jid, "numero_aluno")
+                            return
+                        
+                        if not ctx["slots"].get("valor"):
+                            ctx["awaiting"] = "valor"
+                            await self.agent._ask_for_slot(self, user_jid, "valor")
+                            return
 
-            # Financeiro: retomar fluxo pendente
+                        try: val_float = float(ctx["slots"]["valor"])
+                        except: val_float = 0.0
+                        
+                        await self.agent._request_debt_payment(self, user_jid, ctx["slots"]["numero_aluno"], val_float)
+                        return
+
+                    # Se era Ver Saldo
+                    if pendente == "ver_saldo" and slot == "numero_aluno":
+                        await self.agent._query_debt_status(self, user_jid, valor)
+                        return
+
+                    # Se preenchemos aluno e havia operação pendente sensível
+                    if slot == "numero_aluno" and pendente and pendente not in self.agent.INTENTS_NO_FINANCIAL_CHECK:
+                        await self.agent._query_debt_status(self, user_jid, valor)
+                        return
+
+                    target = pendente if pendente else ctx.get("intencao")
+                    await self.agent.processar_intencao_negocio(self, user_jid, target, ctx)
+                return
+
+            # Resposta do Financeiro
             if sender.startswith("financeiro@"):
-                pendente = ctx.get("pendente")
-                debt = data.get("debt")  # "yes" / "no" / "unknown"
+                to_user = data.get("to_user")
+                if not to_user: return
+                ctx = self.agent._get_ctx(to_user)
 
-                if pendente == "inscricao_depois_divida":
-                    ctx["pendente"] = None
-
-                    if debt == "yes":
-                        await self.agent._reply_to_user(
-                            self,
-                            to_user,
-                            {
-                                "ok": False,
-                                "erro": "bloqueado_por_divida",
-                                "valor_divida": data.get("valor"),
-                                "saldo": data.get("saldo"),
-                                "isento_taxas": data.get("isento_taxas"),
-                            },
-                        )
+                if perf == "inform" and "debt" in data:
+                    # Apenas Ver Saldo
+                    if ctx.get("pendente") == "ver_saldo":
+                        saldo = data.get("saldo", 0)
+                        divida = data.get("valor", 0)
+                        msg_texto = f"A sua situação financeira: Saldo = {saldo}€."
+                        if data["debt"] == "yes":
+                            msg_texto += f" Atenção: Tem {divida}€ em dívida!"
+                        else:
+                            msg_texto += " Situação regularizada."
+                        
+                        await self.agent._reply_to_user(self, to_user, {"msg": msg_texto})
+                        ctx["pendente"] = None
                         return
 
-                    if debt == "unknown":
-                        await self.agent._reply_to_user(
-                            self,
-                            to_user,
-                            {"ok": False, "erro": "financeiro_desconhecido", "detalhes": data},
-                        )
-                        return
-
-                    # debt == "no" => prosseguir com Horários (por agora)
-                    curso = utilsAssistente.normalizar_curso(ctx["slots"].get("curso"))
-                    disciplinas = utilsAssistente.normalizar_disciplinas(ctx["slots"].get("disciplina"))
-                    ctx["slots"]["curso"] = curso
-                    ctx["slots"]["disciplina"] = disciplinas
-                    await self.agent._forward_to_horarios(self, to_user, curso, disciplinas)
+                    # Bloqueio por Dívida
+                    if data["debt"] == "yes":
+                        ctx["pendente"] = None
+                        await self.agent._reply_to_user(self, to_user, {
+                            "ok": False, 
+                            "msg": f"Operação bloqueada. Tem uma dívida de {data.get('valor')}€.",
+                            "valor_divida": data.get("valor")
+                        })
+                    else:
+                        op_pendente = ctx.get("pendente")
+                        if op_pendente:
+                            await self.agent.processar_intencao_negocio(self, to_user, op_pendente, ctx)
+                            ctx["pendente"] = None
                     return
 
-                if pendente == "pagamentos_depois_divida":
-                    ctx["pendente"] = None
-                    await self.agent._reply_to_user(self, to_user, {"ok": True, "financeiro": data})
+                # Resposta Pagamento
+                if perf == "inform" and "paid" in data:
+                    await self.agent._reply_to_user(self, to_user, {
+                        "ok": data["paid"],
+                        "msg": "Pagamento efetuado com sucesso." if data["paid"] else "Pagamento recusado.",
+                        "saldo_novo": data.get("saldo_novo")
+                    })
+                    # Limpar slots para nova operação
+                    ctx["slots"] = {}
+                    ctx["intencao"] = None
                     return
 
-            # default: encaminhar ao utilizador
-            await self.agent._reply_to_user(self, to_user, data)
-            return
+            if to_user := data.get("to_user"):
+                await self.agent._reply_to_user(self, to_user, data)

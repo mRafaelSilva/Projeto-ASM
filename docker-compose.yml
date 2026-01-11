@@ -1,0 +1,10 @@
+services:
+  openfire:
+    image: sameersbn/openfire:latest
+    container_name: openfire_asm
+    restart: always
+    ports:
+      - "9090:9090"
+      - "5222:5222"
+    volumes:
+      - ./openfire_data:/var/lib/openfire

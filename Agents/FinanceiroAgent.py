@@ -112,6 +112,7 @@ class FinanceiroAgent(agent.Agent):
             conteudo = self.agent._safe_decode_body(msg)
             acao = conteudo.get("acao", "has_debt")
             estudante_id = self.agent._normalize_student_id(conteudo.get("estudante_id"))
+            to_user = conteudo.get("to_user")
 
             reply = msg.make_reply()
             reply.set_metadata("performative", "inform")
@@ -131,7 +132,8 @@ class FinanceiroAgent(agent.Agent):
                 reply.body = jsonpickle.encode({
                     "debt": "unknown",
                     "motivo": "estudante_nao_encontrado",
-                    "estudante_id": estudante_id
+                    "estudante_id": estudante_id,
+                    "to_user": to_user
                 })
                 await self.send(reply)
                 return
@@ -142,6 +144,7 @@ class FinanceiroAgent(agent.Agent):
                 "valor": info["valor_divida"],
                 "saldo": info["saldo"],
                 "isento_taxas": info["isento_taxas"],
+                "to_user": to_user
             })
             await self.send(reply)
 
@@ -164,6 +167,7 @@ class FinanceiroAgent(agent.Agent):
 
             conteudo = self.agent._safe_decode_body(msg)
             acao = conteudo.get("acao")
+            to_user = conteudo.get("to_user")
 
             # Só tratamos requests de pagamento aqui
             if acao != "pay_debt":
@@ -172,7 +176,8 @@ class FinanceiroAgent(agent.Agent):
                 reply.body = jsonpickle.encode({
                     "error": "unexpected_request_action",
                     "expected": "pay_debt",
-                    "got": acao
+                    "got": acao,
+                    "to_user": to_user
                 })
                 await self.send(reply)
                 return
@@ -185,7 +190,8 @@ class FinanceiroAgent(agent.Agent):
                 reply.set_metadata("performative", "failure")
                 reply.body = jsonpickle.encode({
                     "error": "missing_fields",
-                    "required": ["acao", "estudante_id", "valor"]
+                    "required": ["acao", "estudante_id", "valor"],
+                    "to_user": to_user
                 })
                 await self.send(reply)
                 return
@@ -213,7 +219,8 @@ class FinanceiroAgent(agent.Agent):
                 reply.set_metadata("performative", "refuse")
                 reply.body = jsonpickle.encode({
                     "motivo": "estudante_nao_encontrado",
-                    "estudante_id": estudante_id
+                    "estudante_id": estudante_id,
+                    "to_user": to_user
                 })
                 await self.send(reply)
                 return
@@ -227,7 +234,8 @@ class FinanceiroAgent(agent.Agent):
                 reply.body = jsonpickle.encode({
                     "paid": False,
                     "motivo": "isento_taxas",
-                    "saldo_atual": info_before["saldo"]
+                    "saldo_atual": info_before["saldo"],
+                    "to_user": to_user
                 })
                 await self.send(reply)
                 return
@@ -264,5 +272,6 @@ class FinanceiroAgent(agent.Agent):
                 "saldo_novo": rec["saldo"],
                 "debt_cleared": (not info_after["tem_divida"]),
                 "debt_valor_restante": info_after["valor_divida"],
+                "to_user": to_user
             })
             await self.send(reply)
