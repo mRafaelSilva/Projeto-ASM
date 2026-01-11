@@ -155,3 +155,11 @@ def extrair_slots(*args) -> Dict[str, Any]:
         slots["disciplina"] = normalizar_disciplinas(disc)
 
     return slots
+
+HELP_MESSAGE = """
+Olá caro utilizador/a! 
+Como a sua Secretaria Online, posso oferecer serviços relacionados a: 
+ - Inscrições em cursos e cadeiras (LEI, LI3, etc.).
+ - Ver os seus horários e gerir conflitos.
+ - Pagamentos (ver saldo ou fazer pagamento).
+"""
