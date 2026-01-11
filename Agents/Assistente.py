@@ -319,15 +319,3 @@ class ReceiveInformBehaviour(CyclicBehaviour):
             # default: encaminhar ao utilizador
             await self.agent._reply_to_user(self, to_user, data)
             return
-
-
-async def main():
-    assistente_agent = AssistenteAgent("assistente@localhost", "1234")
-    await assistente_agent.start(auto_register=False)
-
-    while assistente_agent.is_alive():
-        await asyncio.sleep(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

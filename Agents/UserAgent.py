@@ -1,20 +1,28 @@
 from spade import agent
 import spade.behaviour as behaviour
 from spade.message import Message
+
+import asyncio
 import json
 import jsonpickle
-import asyncio
+
+from aioconsole import ainput
 
 
 class UserAgent(agent.Agent):
     class SendRequestBehaviour(behaviour.OneShotBehaviour):
         async def run(self):
-            await asyncio.sleep(1)
-            loop = asyncio.get_event_loop()
+            # pequeno atraso para garantir que os outros agentes já arrancaram
+            await asyncio.sleep(0.5)
 
-            texto = await loop.run_in_executor(
-                None, lambda: input("Digite o seu pedido inicial: ").strip()
-            )
+            try:
+                texto = (await ainput("Digite o seu pedido inicial: ")).strip()
+            except (EOFError, KeyboardInterrupt):
+                # deixa o main.py tratar o shutdown
+                return
+
+            if not texto:
+                return
 
             # ---- MODO TESTE: se começar por /horarios, manda direto para o HorariosAgent ----
             # Exemplos:
@@ -34,9 +42,7 @@ class UserAgent(agent.Agent):
 
                 msg = Message(to="horarios@localhost")
                 msg.set_metadata("performative", "request")
-                msg.body = jsonpickle.encode(
-                    {"acao": acao, "curso": curso, "disciplinas": discs}
-                )
+                msg.body = jsonpickle.encode({"acao": acao, "curso": curso, "disciplinas": discs})
                 await self.send(msg)
                 print("[UserAgent] Pedido enviado ao HorariosAgent.")
                 return
@@ -51,23 +57,22 @@ class UserAgent(agent.Agent):
 
     class ReceiveMessageBehaviour(behaviour.CyclicBehaviour):
         async def run(self):
-            msg = await self.receive(timeout=10)
+            msg = await self.receive(timeout=1)
             if not msg:
                 return
 
             perf = msg.get_metadata("performative")
+            sender = str(msg.sender).split("/")[0]
 
             # tentar JSON primeiro (fluxo do Assistente)
+            corpo = None
             try:
                 corpo = json.loads(msg.body) if msg.body else {}
             except Exception:
-                # fallback para jsonpickle (p.ex. Horários direto)
                 try:
                     corpo = jsonpickle.decode(msg.body)
                 except Exception:
                     corpo = msg.body
-
-            sender = str(msg.sender).split("/")[0]
 
             # Resposta do HorariosAgent (quando o user enviou /horarios ...)
             if sender == "horarios@localhost":
@@ -80,8 +85,10 @@ class UserAgent(agent.Agent):
                 prompt = corpo.get("prompt") or f"Indique: {corpo.get('slot')}"
                 print(f"\n[Assistente pergunta]: {prompt}")
 
-                loop = asyncio.get_event_loop()
-                valor = await loop.run_in_executor(None, lambda: input("> ").strip())
+                try:
+                    valor = (await ainput("> ")).strip()
+                except (EOFError, KeyboardInterrupt):
+                    return
 
                 reply = msg.make_reply()
                 reply.set_metadata("performative", "inform")
@@ -90,7 +97,6 @@ class UserAgent(agent.Agent):
                 print(f"[UserAgent] Resposta '{valor}' enviada.")
                 return
 
-            # Mensagens normais do Assistente
             print(f"\n[Assistente diz]: {corpo}")
 
     async def setup(self):

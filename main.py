@@ -28,20 +28,23 @@ async def main():
         while True:
             await asyncio.sleep(1)
     except (KeyboardInterrupt, asyncio.CancelledError):
+        # CancelledError acontece quando o asyncio.run() cancela a task principal em Ctrl+C
         print("\nA terminar agentes...")
     finally:
-        # shield para reduzir probabilidade de interrupção a meio do shutdown
         await asyncio.gather(
-            asyncio.shield(assistente_agent.stop()),
-            asyncio.shield(user_agent.stop()),
-            asyncio.shield(financeiro_agent.stop()),
-            asyncio.shield(horarios_agent.stop()),
+            assistente_agent.stop(),
+            user_agent.stop(),
+            financeiro_agent.stop(),
+            horarios_agent.stop(),
             return_exceptions=True,
         )
+        # dar tempo para fechar sockets/tarefas internas sem ruido
+        await asyncio.sleep(0.5)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
+        # evita traceback do runner
         pass
