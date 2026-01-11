@@ -1,14 +1,15 @@
+# Python venv
+.venv/
+venv/
+
+# Python cache
 __pycache__/
 *.py[cod]
-*$py.class
-.env
-.venv
-env/
-venv/
-ENV/
 
-dist/
-build/
-*.egg-info/
-
+# OS / editor
+.DS_Store
 .vscode/
+.idea/
+
+# Logs
+*.log
