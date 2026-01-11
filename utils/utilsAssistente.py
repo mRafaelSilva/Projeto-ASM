@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Union
 _CURSO_ALIASES = {
     "L-EI": {"L-EI", "LEI", "L EI", "L_EI", "L.EI"},
     "L-G": {"L-G", "LG", "L G", "L_G", "L.G"},
+    "M-IA": {"M-IA", "MIA", "M IA", "M_IA", "M.IA"},
 }
 
 
