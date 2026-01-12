@@ -5,6 +5,7 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 import jsonpickle
 
+
 class UserAgent(Agent):
     async def setup(self):
         print(f"UserAgent {str(self.jid)} iniciado.")
@@ -21,14 +22,17 @@ class UserAgent(Agent):
     class InputBehaviour(CyclicBehaviour):
         async def on_start(self):
             await asyncio.sleep(0.5)
-            print("\n" + "="*61)
+            print("\n" + "="*65)
             print("CHAT INICIADO")
+            print("-"*65)
             print("Comandos de sessão:")
             print("  login <numero_aluno>  - Iniciar sessão")
             print("  logout                - Terminar sessão")
             print("  status                - Ver sessão ativa")
-            print("Depois pode fazer pedidos sem indicar o número.")
-            print("="*61 + "\n")
+            print("-"*65)
+            print("Ações sem login: olá, ajuda, ver horários")
+            print("Ações com login: ver saldo, pagar, inscrever em disciplinas")
+            print("="*65 + "\n")
 
         async def run(self):
             await self.agent.lock_input.wait()
@@ -49,12 +53,14 @@ class UserAgent(Agent):
             if texto_lower.startswith("login "):
                 numero = texto[6:].strip()
                 if numero.isdigit():
-                    self.agent.sessao_aluno = numero
-                    print(f"\n[Sessão] Login efetuado! Aluno: {numero}")
-                    print("[Sessão] Agora pode fazer pedidos sem indicar o número.")
+                    # Enviar pedido de login ao Assistente para validar
+                    msg = Message(to="assistente@localhost")
+                    msg.set_metadata("performative", "request")
+                    msg.body = jsonpickle.encode({"type": "login", "numero_aluno": numero})
+                    await self.send(msg)
                 else:
                     print("\n[Sessão] Número inválido. Use: login <numero>")
-                self.agent.lock_input.set()
+                    self.agent.lock_input.set()
                 return
             
             # Logout
@@ -66,7 +72,7 @@ class UserAgent(Agent):
                     msg.body = jsonpickle.encode({"type": "logout"})
                     await self.send(msg)
                     
-                    print(f"\n[Sessão] Logout efetuado. Aluno {self.agent.sessao_aluno} desconectado.")
+                    print(f"\n[Sessão] Logout efetuado. Até breve!")
                     self.agent.sessao_aluno = None
                 else:
                     print("\n[Sessão] Não existe sessão ativa.")
@@ -76,7 +82,7 @@ class UserAgent(Agent):
             # Ver sessão ativa
             if texto_lower in ["quem sou", "sessao", "sessão", "status"]:
                 if self.agent.sessao_aluno:
-                    print(f"\n[Sessão] Sessão ativa: Aluno {self.agent.sessao_aluno}")
+                    print(f"\n[Sessão] Sessão ativa: Aluno Nº {self.agent.sessao_aluno}")
                 else:
                     print("\n[Sessão] Nenhuma sessão ativa. Use 'login <numero>' para entrar.")
                 self.agent.lock_input.set()
@@ -120,6 +126,18 @@ class UserAgent(Agent):
             if isinstance(body, dict) and body.get("type") == "ask":
                 print(f"\n[Assistente]: {body.get('prompt')}")
                 self.agent.msg_pergunta_pendente = msg
+                self.agent.lock_input.set()
+                return
+            
+            # Se for resposta de login
+            if isinstance(body, dict) and body.get("type") == "login_response":
+                if body.get("success"):
+                    self.agent.sessao_aluno = body.get("numero_aluno")
+                    print(f"\n[Sessão] Login efetuado!")
+                    print(f"[Sessão] Bem-vindo(a), {body.get('nome')} (Nº {body.get('numero_aluno')})")
+                    print(f"[Sessão] Curso: {body.get('curso')} | Estatuto: {body.get('estatuto')}")
+                else:
+                    print(f"\n[Sessão] {body.get('msg', 'Login falhou.')}")
                 self.agent.lock_input.set()
                 return
 

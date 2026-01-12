@@ -1,3 +1,5 @@
+import json
+import os
 import jsonpickle
 from typing import Any, Dict, Set
 from spade.agent import Agent
@@ -6,8 +8,26 @@ from spade.message import Message
 import utils.utilsLLM as llm
 import utils.utilsAssistente as utils
 
+# Caminho para a base de dados de estudantes
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ESTUDANTES_PATH = os.path.join(_BASE_DIR, "Database", "estudantes.json")
+
+def verificar_estudante(numero_aluno: str) -> dict | None:
+    """Verifica se o estudante existe na BD. Retorna dados ou None."""
+    try:
+        with open(_ESTUDANTES_PATH, "r", encoding="utf-8") as f:
+            estudantes = json.load(f)
+        for est in estudantes:
+            if str(est.get("id")) == str(numero_aluno):
+                return est
+        return None
+    except Exception:
+        return None
+
 class AssistenteAgent(Agent):
     INTENTS_NO_FINANCIAL_CHECK: Set[str] = {"horarios", "ajuda", "saudacao", "desconhecida"}
+    # Intenções que não precisam de sessão/login (ações públicas)
+    INTENTS_NO_LOGIN: Set[str] = {"horarios", "ajuda", "saudacao", "desconhecida"}
 
     def __init__(self, jid, password):
         super().__init__(jid, password)
@@ -102,6 +122,30 @@ class AssistenteAgent(Agent):
             user_jid = str(msg.sender).split("/")[0]
             ctx = self.agent._get_ctx(user_jid)
             
+            # Tratar login - verificar estudante na BD
+            if data.get("type") == "login":
+                numero = data.get("numero_aluno")
+                estudante = verificar_estudante(numero)
+                
+                if estudante:
+                    ctx["sessao_aluno"] = numero
+                    ctx["sessao_nome"] = estudante.get("nome", "")
+                    await self.agent._reply(self, user_jid, {
+                        "type": "login_response",
+                        "success": True,
+                        "numero_aluno": numero,
+                        "nome": estudante.get("nome", ""),
+                        "curso": estudante.get("curso_id", ""),
+                        "estatuto": estudante.get("estatuto", "")
+                    })
+                else:
+                    await self.agent._reply(self, user_jid, {
+                        "type": "login_response",
+                        "success": False,
+                        "msg": f"Estudante {numero} não encontrado na base de dados."
+                    })
+                return
+            
             # Tratar logout - limpar todo o contexto
             if data.get("type") == "logout":
                 ctx["sessao_aluno"] = None
@@ -133,8 +177,16 @@ class AssistenteAgent(Agent):
             ctx["intencao"] = intencao
             ctx["slots"].update(resultado["slots"])
 
-            if intencao in ["saudacao", "desconhecida", "ajuda"]:
+            # Ações públicas (não precisam de login)
+            if intencao in self.agent.INTENTS_NO_LOGIN:
                 await self.agent.processar_intencao(self, user_jid, intencao, ctx)
+                return
+            
+            # Ações privadas - verificar se tem sessão ativa
+            if not ctx.get("sessao_aluno"):
+                await self.agent._reply(self, user_jid, {
+                    "msg": "Esta ação requer login! Use 'login <numero_aluno>' primeiro."
+                })
                 return
 
             # Lógica Financeira
