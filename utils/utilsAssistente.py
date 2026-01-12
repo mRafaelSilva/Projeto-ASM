@@ -114,6 +114,12 @@ def extrair_intencao(texto: str) -> str:
     if re.search(r"\b(saldo|divida|dívida|quanto devo|propina|finance)\b", texto):
         return "ver_saldo"
 
+    if re.search(r"\b(ver|consultar|detalhes?)\b.*\b(regulamento|estatuto)\b.*\b(de|do|da)\b", texto):
+        return "ver_regulamento"
+
+    if re.search(r"\b(regulamentos?|estatutos?)\b.*\b(existem|dispon[ií]veis|lista|todos)\b", texto):
+        return "listar_regulamentos"
+
     return "desconhecida"
 
 

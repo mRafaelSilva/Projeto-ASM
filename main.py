@@ -2,6 +2,7 @@ from Agents.Assistente import AssistenteAgent
 from Agents.UserAgent import UserAgent
 from Agents.FinanceiroAgent import FinanceiroAgent
 from Agents.HorariosAgent import HorariosAgent
+from Agents.RegulamentosAgent import RegulamentosAgent
 import asyncio
 
 
@@ -10,17 +11,21 @@ async def main():
     user_jid = "user@localhost"
     financeiro_jid = "financeiro@localhost"
     horarios_jid = "horarios@localhost"
+    regulamentos_jid = "regulamentos@localhost"
+    
     password = "1234"
 
     assistente_agent = AssistenteAgent(assistente_jid, password)
     user_agent = UserAgent(user_jid, password)
     financeiro_agent = FinanceiroAgent(financeiro_jid, password)
     horarios_agent = HorariosAgent(horarios_jid, password)
+    regulamentos_agent = RegulamentosAgent(regulamentos_jid, password)
 
     print("A iniciar agentes! (Ctrl+C para terminar)")
     await assistente_agent.start(auto_register=True)
     await financeiro_agent.start(auto_register=True)
     await horarios_agent.start(auto_register=True)
+    await regulamentos_agent.start(auto_register=True)
     await user_agent.start(auto_register=True)
 
     try:
@@ -34,6 +39,7 @@ async def main():
             user_agent.stop(),
             financeiro_agent.stop(),
             horarios_agent.stop(),
+            regulamentos_agent.stop(),
             return_exceptions=True,
         )
         # dar tempo para fechar sockets/tarefas internas sem ruido

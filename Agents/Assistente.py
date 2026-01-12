@@ -26,8 +26,7 @@ def verificar_estudante(numero_aluno: str) -> dict | None:
 
 class AssistenteAgent(Agent):
     INTENTS_NO_FINANCIAL_CHECK: Set[str] = {"horarios", "ajuda", "saudacao", "desconhecida"}
-    # Intenções que não precisam de sessão/login (ações públicas)
-    INTENTS_NO_LOGIN: Set[str] = {"horarios", "ajuda", "saudacao", "desconhecida"}
+    INTENTS_NO_REGULAMENTOS_CHECK: Set[str] = {"listar_regulamentos", "ver_regulamento", "inscrever_regulamento", "verificar_inscricao_regulamento"}
 
     def __init__(self, jid, password):
         super().__init__(jid, password)
@@ -60,6 +59,13 @@ class AssistenteAgent(Agent):
     async def processar_intencao(self, behaviour, user_jid, intencao, ctx):
         slots = ctx["slots"]
 
+    async def _forward_request_to_regulamentos(self, behaviour: CyclicBehaviour, payload: dict):
+        msg = Message(to="regulamentos@localhost")
+        msg.set_metadata("performative", "request")
+        msg.body = jsonpickle.encode(payload)
+        await behaviour.send(msg)
+
+    async def processar_intencao_negocio(self, behaviour: CyclicBehaviour, user_jid: str, intencao: str, ctx: dict):
         if intencao == "saudacao":
             await self._reply(behaviour, user_jid, {"msg": "Olá! Posso ajudar com inscrições, horários ou pagamentos."})
             return
@@ -110,6 +116,61 @@ class AssistenteAgent(Agent):
         await self._reply(behaviour, user_jid, {"msg": f"Comando '{intencao}' em construção."})
 
 
+    async def processar_intencao_regulamentos(self,
+                                          behaviour: CyclicBehaviour,
+                                          user_jid: str,
+                                          intencao: str,
+                                          ctx: dict):
+
+        slots = ctx.get("slots", {})
+
+        if intencao == "listar_regulamentos":
+            payload = { "action": "listar_regulamentos", "to_user": user_jid }
+            await self._forward_request_to_regulamentos(behaviour, payload)
+            return
+
+        if intencao == "ver_regulamento":
+            required = ["regulamento"]
+            missing = [k for k in required if not slots.get(k)]
+
+            if missing:
+                ctx["awaiting"] = missing[0]
+                await self._ask_for_slot(behaviour, user_jid, missing[0])
+                return
+
+            payload = {  "action": "ver_regulamento", "regulamento": slots.get("regulamento"), "to_user": user_jid }
+            await self._forward_request_to_regulamentos(behaviour, payload)
+            return
+
+        if intencao == "inscrever_regulamento":
+            required = ["regulamento", "numero_aluno"]
+            missing = [k for k in required if not slots.get(k)]
+
+            if missing:
+                ctx["awaiting"] = missing[0]
+                await self._ask_for_slot(behaviour, user_jid, missing[0])
+                return
+
+            payload = {"action": "inscrever_regulamento", "regulamento": slots.get("regulamento"), "numero_aluno": slots.get("numero_aluno"), "documentos": slots.get("documentos", []), "to_user": user_jid }
+            await self._forward_request_to_regulamentos(behaviour, payload)
+            return
+
+        if intencao == "verificar_inscricao_regulamento":
+            required = ["regulamento", "numero_aluno"]
+            missing = [k for k in required if not slots.get(k)]
+
+            if missing:
+                ctx["awaiting"] = missing[0]
+                await self._ask_for_slot(behaviour, user_jid, missing[0])
+                return
+
+            payload = { "action": "verificar_inscricao_regulamento", "regulamento": slots.get("regulamento"), "numero_aluno": slots.get("numero_aluno"), "to_user": user_jid }
+            await self._forward_request_to_regulamentos(behaviour, payload)
+            return
+
+        await self._reply_to_user(behaviour, user_jid, {"ok": False, "erro": "intencao_nao_suportada", "intencao": intencao})
+
+
     # --- Behaviours ---
     class ReceiveUserRequestBehaviour(CyclicBehaviour):
         async def run(self):
@@ -122,7 +183,7 @@ class AssistenteAgent(Agent):
             user_jid = str(msg.sender).split("/")[0]
             ctx = self.agent._get_ctx(user_jid)
             
-            # Tratar login - verificar estudante na BD
+            # Tratar login
             if data.get("type") == "login":
                 numero = data.get("numero_aluno")
                 estudante = verificar_estudante(numero)
@@ -181,6 +242,8 @@ class AssistenteAgent(Agent):
             if intencao in self.agent.INTENTS_NO_LOGIN:
                 await self.agent.processar_intencao(self, user_jid, intencao, ctx)
                 return
+        
+
             
             # Ações privadas - verificar se tem sessão ativa
             if not ctx.get("sessao_aluno"):
@@ -210,6 +273,10 @@ class AssistenteAgent(Agent):
                     ctx["pendente"] = intencao
                     await self.agent._ask_slot(self, user_jid, "numero_aluno")
                     return
+
+            if intencao in self.agent.INTENTS_NO_REGULAMENTOS_CHECK:
+                await self.agent.processar_intencao_regulamentos(self, user_jid, intencao, ctx)
+                return
                  
                  # Valida dívida antes
                  ctx["pendente"] = intencao
@@ -305,6 +372,48 @@ class AssistenteAgent(Agent):
                     ctx["intencao"] = None
                     return
 
+            if sender.startswith("regulamentos@"):
+                to_user = data.get("to_user")
+                if not to_user:
+                    return
+
+                action = data.get("action")
+
+                # LISTAR REGULAMENTOS
+                if action == "listar_regulamentos":
+                    regs = data.get("regulamentos", [])
+
+                    if not regs:
+                        texto = "Não existem regulamentos disponíveis."
+                    else:
+                        texto = "Regulamentos disponíveis:\n"
+                        texto += "\n".join(f"- {r}" for r in regs)
+
+                    await self.agent._reply_to_user(self, to_user, {"msg": texto})
+                    return
+
+                # VER REGULAMENTO
+                if action == "ver_regulamento":
+                    nome = data.get("regulamento")
+                    dados = data.get("dados", {})
+
+                    if not dados:
+                        texto = f"O regulamento '{nome}' não foi encontrado."
+                    else:
+                        texto = (
+                            f"Regulamento: {nome}\n"
+                            f"Descrição: {dados.get('descricao')}\n"
+                            f"ECTS máximos/ano: {dados.get('ects_max_ano')}\n"
+                        )
+
+                        regras = dados.get("regras", [])
+                        if regras:
+                            texto += "Regras:\n" + "\n".join(f"- {r}" for r in regras)
+
+                    await self.agent._reply_to_user(self, to_user, {"msg": texto})
+                    return
+
             target_user = data.get("to_user")
             if target_user:
                 await self.agent._reply(self, target_user, data)
+                return

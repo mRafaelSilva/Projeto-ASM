@@ -1,0 +1,82 @@
+{
+  "trabalhador-estudante": {
+    "descricao": "Estatuto atribuído a estudantes que exercem atividade profissional durante o período letivo, permitindo um regime académico mais flexível.",
+    "docs_obrigatorios": ["comprovativo_trabalho"],
+    "ects_max_ano": 45,
+    "regras": [
+      "Direito a regime especial de avaliação.",
+      "Possibilidade de horários ajustados.",
+      "Acesso a época especial de exames."
+    ],
+    "link_info": "https://dre.pt/dre/legislacao-consolidada/lei/2009-34546475"
+  },
+
+  "estatuto-especial": {
+    "descricao": "Estatuto atribuído a estudantes em condições pessoais específicas que justificam adaptações ao regime académico.",
+    "docs_obrigatorios": ["atestado"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Adaptações na avaliação.",
+      "Acompanhamento académico diferenciado."
+    ],
+    "link_info": "https://www.dges.gov.pt/pt/pagina/estudantes-com-necessidades-educativas-especiais"
+  },
+
+  "necessidades-educativas-especiais": {
+    "descricao": "Estatuto atribuído a estudantes com deficiência ou dificuldades específicas que requerem medidas de apoio educativo.",
+    "docs_obrigatorios": ["relatorio_medico"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Adaptação de métodos de avaliação.",
+      "Acesso a recursos de apoio pedagógico.",
+      "Possibilidade de prolongamento de prazos."
+    ],
+    "link_info": "https://www.dges.gov.pt/pt/pagina/estudantes-com-necessidades-educativas-especiais"
+  },
+
+  "atleta-alta-competicao": {
+    "descricao": "Estatuto concedido a estudantes integrados no regime de alta competição desportiva reconhecida oficialmente.",
+    "docs_obrigatorios": ["declaracao_federacao"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Justificação automática de faltas por competição.",
+      "Possibilidade de alteração de datas de avaliação.",
+      "Acesso a época especial."
+    ],
+    "link_info": "https://dre.pt/dre/legislacao-consolidada/decreto-lei/2012-55378916"
+  },
+
+  "dirigente-associativo": {
+    "descricao": "Estatuto atribuído a estudantes que exercem funções de direção em associações académicas reconhecidas.",
+    "docs_obrigatorios": ["ata_nomeacao"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Justificação de faltas por motivos associativos.",
+      "Flexibilização pontual de prazos académicos."
+    ],
+    "link_info": "https://dre.pt/dre/legislacao-consolidada/lei/2009-34546475"
+  },
+
+  "mobilidade-internacional": {
+    "descricao": "Estatuto aplicado a estudantes em programas de mobilidade académica internacional.",
+    "docs_obrigatorios": ["acordo_mobilidade"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Reconhecimento automático das UC aprovadas.",
+      "Acompanhamento pelo gabinete de relações internacionais."
+    ],
+    "link_info": "https://www.dges.gov.pt/pt/pagina/mobilidade-internacional"
+  },
+
+  "bombeiro-voluntario": {
+    "descricao": "Estatuto atribuído a estudantes que exercem atividade como bombeiros voluntários em serviço ativo.",
+    "docs_obrigatorios": ["declaracao_corporacao"],
+    "ects_max_ano": 60,
+    "regras": [
+      "Justificação de faltas por ocorrências.",
+      "Direito a época especial de avaliação.",
+      "Flexibilização de prazos em situações excecionais."
+    ],
+    "link_info": "https://dre.pt/dre/legislacao-consolidada/decreto-lei/2007-34546464"
+  }
+}
