@@ -20,7 +20,7 @@ class AssistenteAgent(Agent):
 
     def _get_ctx(self, user_jid: str) -> Dict[str, Any]:
         return self._contexts.setdefault(user_jid, {
-            "user_jid": user_jid, "intencao": None, "slots": {}, "pendente": None, "awaiting": None
+            "user_jid": user_jid, "intencao": None, "slots": {}, "pendente": None, "awaiting": None, "sessao_aluno": None
         })
 
     # --- Helpers de Envio ---
@@ -99,11 +99,31 @@ class AssistenteAgent(Agent):
             try: data = jsonpickle.decode(msg.body)
             except: data = {}
             
-            texto = data.get("texto", "")
-            if not texto: return
-
             user_jid = str(msg.sender).split("/")[0]
             ctx = self.agent._get_ctx(user_jid)
+            
+            # Tratar logout - limpar todo o contexto
+            if data.get("type") == "logout":
+                ctx["sessao_aluno"] = None
+                ctx["slots"] = {}
+                ctx["intencao"] = None
+                ctx["pendente"] = None
+                ctx["awaiting"] = None
+                return
+            
+            texto = data.get("texto", "")
+            if not texto: return
+            
+            # Atualizar sessão do aluno se foi enviada
+            sessao_aluno = data.get("sessao_aluno")
+            if sessao_aluno:
+                ctx["sessao_aluno"] = sessao_aluno
+            
+            # Limpar slots do pedido anterior (manter apenas numero_aluno se há sessão)
+            numero_sessao = ctx.get("sessao_aluno")
+            ctx["slots"] = {}
+            if numero_sessao:
+                ctx["slots"]["numero_aluno"] = numero_sessao
 
             # LLM
             resultado = llm.interpretar_comando(texto)
