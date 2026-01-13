@@ -1,9 +1,8 @@
 from __future__ import annotations
-
+from spade.message import Message
 import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
-
 import jsonpickle
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
@@ -89,13 +88,6 @@ class HorariosAgent(Agent):
             if isinstance(decoded, dict):
                 return decoded
         except Exception:
-            pass
-
-        # 2) json
-        try:
-            decoded = json.loads(body)
-            return decoded if isinstance(decoded, dict) else {}
-        except Exception:
             return {}
 
     def _get_disciplina(self, curso: str, disc_id: str) -> Optional[dict]:
@@ -110,7 +102,6 @@ class HorariosAgent(Agent):
                 return t
         return None
 
-    # -------------------- CORE LOGIC --------------------
 
     def _build_schedule_items(self, curso: str, escolhas: Dict[str, str]) -> List[dict]:
         items: List[dict] = []
@@ -315,19 +306,15 @@ class HorariosAgent(Agent):
             escolhas = req.get("escolhas")
             to_user = req.get("to_user")
 
-            # ✅ responder SEMPRE ao JID "bare" do Assistente (evita problemas com resource)
             sender_bare = str(msg.sender).split("/")[0]
 
-            from spade.message import Message  # import local para evitar mexer no topo
             reply = Message(to=sender_bare)
 
-            # manter thread para correlação (útil quando houver várias conversas)
             if getattr(msg, "thread", None):
                 reply.thread = msg.thread
 
             reply.set_metadata("performative", "inform")
 
-            # validações mínimas
             if not acao or not curso or not isinstance(disciplinas, list) or len(disciplinas) == 0:
                 reply.set_metadata("performative", "failure")
                 payload = {

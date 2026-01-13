@@ -42,26 +42,32 @@ def interpretar_comando(texto_usuario):
     - Disciplinas Válidas: {json.dumps(CONTEXTO_VALIDO['disciplinas'])}
 
     REGRAS:
-    1. Intenções: 'inscricao', 'horarios', 'fazer_pagamento', 'ver_saldo', 'saudacao', 'ajuda'.
+    1. Intenções: 'inscricao', 'horarios', 'fazer_pagamento', 'ver_saldo', 'saudacao', 'ajuda', 
+       'listar_regulamentos', 'ver_regulamento', 'inscrever_regulamento', 'verificar_inscricao_regulamento'.
        - 'inscricao' (inscrever, matricular)
        - 'horarios' (ver horário, aulas, quando é, sala)
        - 'fazer_pagamento' (pagar, liquidar, transferir)
        - 'ver_saldo' (quanto devo, divida, saldo, propinas)
        - 'saudacao' (ola, bom dia, boas, oi)
        - 'ajuda' (o que fazes, help, ajuda)
+       - 'listar_regulamentos' (quais regulamentos, listar regras, ver normas)
+       - 'ver_regulamento' (ler regulamento X, detalhes do regulamento Y)
+       - 'inscrever_regulamento' (aceitar regulamento, assinar regulamento, inscrever reg)
+       - 'verificar_inscricao_regulamento' (estou inscrito no regulamento?, já aceitei o regulamento?)
     2. Caso o texto não seja reconhecido, devolve uma intencao 'desconhecida'.
     3. SLOTS (Campos):
        - 'curso': Tenta mapear o texto para um dos Cursos Válidos. Se não existir, null.
        - 'disciplina': Tenta mapear o texto para uma das Disciplinas Válidas. 
          Exemplo: Se user diz "sistemas operativos", e existe "SO1", devolve "SO1". 
          Se o user diz "Batatas" e não está na lista, devolve null.
-       - 'numero_aluno': Extrai apenas números.
-       - 'valor': Extrai montante (float).
-
+       - 'numero_aluno': Extrai apenas números que identifiquem o aluno. NOTA: Se a intenção for 'fazer_pagamento', números isolados (ex: 200, 50.5) são 'valor', NÃO 'numero_aluno'.
+       - 'valor': Extrai montante (float). Prioritário em 'fazer_pagamento'.
+       - 'regulamento': Nome do regulamento mencionado (ex: "avaliação", "exames", "prescrições").
+ 
     Responde APENAS JSON neste formato:
     {{
         "intencao": "...",
-        "slots": {{ "curso": "...", "disciplina": "...", "numero_aluno": "...", "valor": "..." }}
+        "slots": {{ "curso": "...", "disciplina": "...", "numero_aluno": "...", "valor": "...", "regulamento": "..." }}
     }}
     """
 

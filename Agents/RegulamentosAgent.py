@@ -119,11 +119,12 @@ class RegulamentosBehaviour(CyclicBehaviour):
 
     async def _handle_ver_regulamento(self, msg, data):
         nome = data.get("regulamento")
+        to_user = data.get("to_user")
 
         if not nome:
             reply = msg.make_reply()
             reply.set_metadata("performative", "failure")
-            reply.body = jsonpickle.encode({"error": "missing_regulamento"})
+            reply.body = jsonpickle.encode({"error": "missing_regulamento", "to_user": to_user})
             await self.send(reply)
             return
 
@@ -132,7 +133,7 @@ class RegulamentosBehaviour(CyclicBehaviour):
         except Exception:
             reply = msg.make_reply()
             reply.set_metadata("performative", "failure")
-            reply.body = jsonpickle.encode({"error": "erro_carregar_regulamentos"})
+            reply.body = jsonpickle.encode({"error": "erro_carregar_regulamentos", "to_user": to_user})
             await self.send(reply)
             return
 
@@ -143,7 +144,8 @@ class RegulamentosBehaviour(CyclicBehaviour):
                 "ok": False,
                 "action": "ver_regulamento",
                 "erro": "regulamento_inexistente",
-                "regulamento": nome
+                "regulamento": nome,
+                "to_user": to_user
             })
             await self.send(reply)
             return
@@ -154,7 +156,8 @@ class RegulamentosBehaviour(CyclicBehaviour):
             "ok": True,
             "action": "ver_regulamento",
             "regulamento": nome,
-            "dados": regras[nome]
+            "dados": regras[nome],
+            "to_user": to_user
         })
         await self.send(reply)
 

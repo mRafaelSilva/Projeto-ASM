@@ -1,7 +1,29 @@
+import jsonpickle
+from spade.message import Message
 import json
 import os
 import re
 from typing import Any, Dict, List, Optional, Union
+
+# --- Helpers de Comunicação ---
+
+async def reply(behaviour, user_jid: str, payload: dict):
+    msg = Message(to=user_jid)
+    msg.set_metadata("performative", "inform")
+    msg.body = jsonpickle.encode(payload)
+    await behaviour.send(msg)
+
+async def ask_slot(behaviour, user_jid: str, slot: str):
+    msg = Message(to=user_jid)
+    msg.set_metadata("performative", "request")
+    msg.body = jsonpickle.encode({"type": "ask", "slot": slot, "prompt": f"Por favor, indique: {slot}"})
+    await behaviour.send(msg)
+
+async def forward_request(behaviour, to_agent: str, payload: dict):
+    msg = Message(to=to_agent)
+    msg.set_metadata("performative", "request")
+    msg.body = jsonpickle.encode(payload)
+    await behaviour.send(msg)
 
 
 # Cursos suportados (aliases). Mantém isto se ainda não tiverem carga dinâmica de cursos.
@@ -163,9 +185,21 @@ def extrair_slots(*args) -> Dict[str, Any]:
     return slots
 
 HELP_MESSAGE = """
-Olá caro utilizador/a! 
-Como a sua Secretaria Online, posso oferecer serviços relacionados a: 
- - Inscrições em cursos e cadeiras (LEI, LI3, etc.).
- - Ver os seus horários e gerir conflitos.
- - Pagamentos (ver saldo ou fazer pagamento).
+Olá! Sou a tua Secretaria Online. 
+
+Estou aqui para facilitar a tua vida académica. Podes pedir-me ajuda para:
+
+Académico
+   • "Inscrever em SO1"
+   • "Ver horário de LEI"
+
+Financeiro
+   • "Ver saldo"
+   • "Pagar 50 euros"
+
+Regulamentos
+   • "Listar regulamentos"
+   • "Consultar regulamento de avaliação"
+
+Como posso ajudar-te hoje?
 """
