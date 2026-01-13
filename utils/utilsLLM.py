@@ -3,6 +3,9 @@ import json
 import os
 
 MODELO = "llama3.2"
+TIMEOUT = 30  # segundos
+TEMPERATURE = 0.3  # 0.0 = determinístico, 1.0 = criativo
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.join(BASE_DIR, "Database")
 
@@ -72,10 +75,19 @@ def interpretar_comando(texto_usuario):
     """
 
     try:
-        response = ollama.chat(model=MODELO, messages=[
-            {'role': 'system', 'content': prompt_sistema},
-            {'role': 'user', 'content': texto_usuario},
-        ], format='json')
+        response = ollama.chat(
+            model=MODELO, 
+            messages=[
+                {'role': 'system', 'content': prompt_sistema},
+                {'role': 'user', 'content': texto_usuario},
+            ], 
+            format='json',
+            options={
+                'temperature': TEMPERATURE,
+                'num_predict': 200,
+            },
+            keep_alive=TIMEOUT
+        )
 
         dados = json.loads(response['message']['content'])
 

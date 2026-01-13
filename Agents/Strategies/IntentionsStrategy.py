@@ -17,45 +17,109 @@ class IntentionsStrategy:
             await utils.reply(behaviour, user_jid, {"msg": utils.HELP_MESSAGE})
             return
 
+    async def _enviar_inscricao(self, behaviour, user_jid, slots, ctx):
+        """Envia pedido de inscrição ao AcademicoAgent (após verificação de dívidas)"""
+        student_id = slots.get("numero_aluno")
+        class_id = slots.get("disciplina")
+        
+        payload = {"student_id": student_id, "class_id": class_id, "to_user": user_jid}
+        req = Message(to="academico@localhost")
+        req.set_metadata("performative", "inscricao")
+        req.body = jsonpickle.encode(payload)
+        await behaviour.send(req)
+        
+        await utils.reply(behaviour, user_jid, {"msg": f"A processar inscrição em {class_id}..."})
+        ctx["intencao"] = None
+        ctx["pendente"] = None
+
     async def processar_academico(self, behaviour, user_jid, intencao, slots, ctx):
         if intencao == "inscricao":
+            # Validar curso
             if not slots.get("curso"):
                 ctx["awaiting"] = "curso"
-                await utils.ask_slot(behaviour, user_jid, "curso")
+                cursos = utils.get_cursos_disponiveis()
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": f"Qual o curso? (Disponíveis: {', '.join(cursos)})"})
                 return
+            
+            # Verificar se curso existe
+            if not utils.validar_curso(slots.get("curso")):
+                cursos = utils.get_cursos_disponiveis()
+                await utils.reply(behaviour, user_jid, {"msg": f"Curso '{slots.get('curso')}' não encontrado. Cursos disponíveis: {', '.join(cursos)}"})
+                ctx["slots"]["curso"] = None
+                return
+            
+            # Validar disciplina
             if not slots.get("disciplina"):
                 ctx["awaiting"] = "disciplina"
-                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (Indique uma válida, ex: SO1)"})
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
+                return
+            
+            # Normalizar disciplina (pode ser lista ou string)
+            disc = slots.get("disciplina")
+            if isinstance(disc, list):
+                disc = disc[0] if disc else None
+            
+            if not disc or not utils.validar_disciplina(disc):
+                if disc:
+                    await utils.reply(behaviour, user_jid, {"msg": f"Disciplina '{disc}' não encontrada."})
+                ctx["slots"]["disciplina"] = None
+                ctx["awaiting"] = "disciplina"
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
                 return
             
             student_id = ctx["slots"].get("numero_aluno")
-            class_id = ctx["slots"].get("disciplina")
+            class_id = disc.upper()
             
-            # Request to AcademicoAgent
-            payload = {"student_id": student_id, "class_id": class_id, "to_user": user_jid}
-            req = Message(to="academico@localhost")
-            req.set_metadata("performative", "inscricao")
-            req.body = jsonpickle.encode(payload)
-            await behaviour.send(req)
+            # Guardar dados para depois da verificação de dívidas
+            ctx["slots"]["disciplina"] = class_id
+            ctx["pendente"] = "inscricao"
             
-            await utils.reply(behaviour, user_jid, {"msg": f"A processar inscrição em {class_id}..."})
-            ctx["intencao"] = None 
+            # Verificar dívidas antes de inscrever
+            msg = Message(to="financeiro@localhost")
+            msg.set_metadata("performative", "query-if")
+            msg.body = jsonpickle.encode({"acao": "has_debt", "estudante_id": student_id, "to_user": user_jid})
+            await behaviour.send(msg)
             return
 
         if intencao == "horarios":
+            # Validar curso
             if not slots.get("curso"):
                 ctx["awaiting"] = "curso"
-                await utils.ask_slot(behaviour, user_jid, "curso")
+                cursos = utils.get_cursos_disponiveis()
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": f"Qual o curso? (Disponíveis: {', '.join(cursos)})"})
                 return
+            
+            # Verificar se curso existe
+            curso = utils.normalizar_curso(slots.get("curso"))
+            if not utils.validar_curso(curso):
+                cursos = utils.get_cursos_disponiveis()
+                await utils.reply(behaviour, user_jid, {"msg": f"Curso '{slots.get('curso')}' não encontrado. Cursos disponíveis: {', '.join(cursos)}"})
+                ctx["slots"]["curso"] = None
+                return
+            
+            # Validar disciplina
             if not slots.get("disciplina"):
                 ctx["awaiting"] = "disciplina"
-                await utils.ask_slot(behaviour, user_jid, "disciplina")
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
+                return
+            
+            # Normalizar disciplina
+            disc = slots.get("disciplina")
+            if isinstance(disc, list):
+                disc = disc[0] if disc else None
+            
+            if not disc or not utils.validar_disciplina(disc):
+                if disc:
+                    await utils.reply(behaviour, user_jid, {"msg": f"Disciplina '{disc}' não encontrada."})
+                ctx["slots"]["disciplina"] = None
+                ctx["awaiting"] = "disciplina"
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
                 return
 
             payload = {
                 "acao": "check_schedule", 
-                "curso": slots["curso"], 
-                "disciplinas": [slots["disciplina"]], 
+                "curso": curso, 
+                "disciplinas": [disc.upper()], 
                 "to_user": user_jid
             }
             await utils.forward_request(behaviour, "horarios@localhost", payload)

@@ -8,7 +8,7 @@ import jsonpickle
 
 class UserAgent(Agent):
     async def setup(self):
-        print(f"UserAgent {str(self.jid)} iniciado.")
+        print(f"[UserAgent] {str(self.jid)} iniciado.")
         self.msg_pergunta_pendente = None
         self.lock_input = asyncio.Event()
         self.lock_input.set()
@@ -143,5 +143,5 @@ class UserAgent(Agent):
 
             # Mensagem normal informativa
             mensagem = body.get("msg", body) if isinstance(body, dict) else body
-            print(f"\n[Assistente]: {mensagem}")
+            print(f"\n[Assistente]: {mensagem}")     
             self.agent.lock_input.set()

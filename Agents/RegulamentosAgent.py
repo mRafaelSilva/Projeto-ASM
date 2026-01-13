@@ -4,7 +4,6 @@ import os
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
-from spade.template import Template
 
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "Database", "regulamentos.json")
@@ -128,6 +127,9 @@ class RegulamentosBehaviour(CyclicBehaviour):
             await self.send(reply)
             return
 
+        # Normalizar nome: minúsculas, substituir espaços/underscores por hífens
+        nome_normalizado = nome.lower().strip().replace(" ", "-").replace("_", "-")
+
         try:
             regras = load_regulamentos()
         except Exception:
@@ -137,7 +139,7 @@ class RegulamentosBehaviour(CyclicBehaviour):
             await self.send(reply)
             return
 
-        if nome not in regras:
+        if nome_normalizado not in regras:
             reply = msg.make_reply()
             reply.set_metadata("performative", "refuse")
             reply.body = jsonpickle.encode({
@@ -155,8 +157,8 @@ class RegulamentosBehaviour(CyclicBehaviour):
         reply.body = jsonpickle.encode({
             "ok": True,
             "action": "ver_regulamento",
-            "regulamento": nome,
-            "dados": regras[nome],
+            "regulamento": nome_normalizado,
+            "dados": regras[nome_normalizado],
             "to_user": to_user
         })
         await self.send(reply)
@@ -174,7 +176,4 @@ class RegulamentosAgent(Agent):
     async def setup(self):
         print(f"[Regulamentos] {str(self.jid)} ativo.")
 
-        template = Template()
-        template.set_metadata("performative", "request")
-
-        self.add_behaviour(RegulamentosBehaviour(), template)
+        self.add_behaviour(RegulamentosBehaviour())

@@ -66,6 +66,46 @@ def _load_disc_ids() -> set[str]:
 _DISC_IDS = _load_disc_ids()
 
 
+def _load_cursos() -> set[str]:
+    """Carrega os cursos disponíveis do ficheiro disciplinas.json"""
+    try:
+        with open(_DISC_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return set(data.keys())
+        return set()
+    except Exception:
+        return set()
+
+
+_CURSOS_DISPONIVEIS = _load_cursos()
+
+
+def validar_curso(curso: str) -> bool:
+    """Verifica se o curso existe na BD"""
+    if not curso:
+        return False
+    curso_norm = normalizar_curso(curso)
+    return curso_norm in _CURSOS_DISPONIVEIS
+
+
+def validar_disciplina(disciplina: str) -> bool:
+    """Verifica se a disciplina existe na BD"""
+    if not disciplina:
+        return False
+    return disciplina.upper() in _DISC_IDS
+
+
+def get_cursos_disponiveis() -> List[str]:
+    """Retorna lista de cursos disponíveis"""
+    return list(_CURSOS_DISPONIVEIS)
+
+
+def get_disciplinas_disponiveis() -> List[str]:
+    """Retorna lista de disciplinas disponíveis"""
+    return list(_DISC_IDS)
+
+
 def extrair_disciplinas(texto: str) -> List[str]:
     tokens = re.findall(r"[A-Za-z0-9_]+", (texto or "").upper())
     return [t for t in tokens if t in _DISC_IDS]

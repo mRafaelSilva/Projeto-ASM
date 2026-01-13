@@ -29,14 +29,15 @@ class AssistenteAgent(Agent):
     INTENTS_GENERAL: Set[str] = {"saudacao", "ajuda", "desconhecida"}
     INTENTS_ACADEMIC: Set[str] = {"inscricao", "horarios"}
     INTENTS_FINANCIAL: Set[str] = {"fazer_pagamento", "ver_saldo"}
-    INTENTS_NO_LOGIN: Set[str] = {"saudacao", "ajuda", "desconhecida", "horarios"}
+    # Ações que NÃO precisam de login (informações públicas)
+    INTENTS_NO_LOGIN: Set[str] = {"saudacao", "ajuda", "desconhecida", "horarios", "listar_regulamentos", "ver_regulamento"}
 
     def __init__(self, jid, password):
         super().__init__(jid, password)
         self._contexts: Dict[str, Dict[str, Any]] = {}
 
     async def setup(self):
-        print(f"[Assistente] {str(self.jid)} ativo (Full Pickle Mode).")
+        print(f"[Assistente] {str(self.jid)} ativo.")
         self.strategy = IntentionsStrategy()
         self.add_behaviour(self.ReceiveUserRequestBehaviour())
         self.add_behaviour(self.ReceiveInformBehaviour())
@@ -138,7 +139,7 @@ class AssistenteAgent(Agent):
 
             # 5. REGULATION
             if intencao in self.agent.INTENTS_REGULATION:
-                await self.agent.strategy.processar_regulamentos(self.agent, self, user_jid, intencao, ctx["slots"], ctx)
+                await self.agent.strategy.processar_regulamentos(self, user_jid, intencao, ctx["slots"], ctx)
                 return
             
             await utils.reply(self, user_jid, {"msg": f"Comando '{intencao}' não reconhecido ou não suportado."})
@@ -148,6 +149,11 @@ class AssistenteAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=1)
             if not msg: return
+            
+            # Ignorar mensagens de request (tratadas pelo outro behaviour)
+            performative = msg.get_metadata("performative")
+            if performative == "request":
+                return
 
             try: data = jsonpickle.decode(msg.body)
             except: return
@@ -199,6 +205,45 @@ class AssistenteAgent(Agent):
                         await self.agent.strategy.processar_geral(self, user_jid, target, ctx)
                 return
 
+            # --- Resposta do HORARIOS ---
+            if sender.startswith("horarios@"):
+                to_user = data.get("to_user")
+                if not to_user: return
+                
+                ok = data.get("ok", False)
+                acao = data.get("acao", "")
+                
+                if acao == "check_schedule":
+                    if ok:
+                        detalhes = data.get("detalhes", [])
+                        texto = "Horário encontrado:\n"
+                        for item in detalhes:
+                            if not item.get("erro"):
+                                texto += f"  • {item.get('disciplina')} ({item.get('turno')}): {item.get('dia')} {item.get('inicio')}-{item.get('fim')} | Sala: {item.get('sala')}\n"
+                        await utils.reply(self, to_user, {"msg": texto})
+                    else:
+                        conflitos = data.get("conflitos", [])
+                        if conflitos:
+                            texto = "Conflitos encontrados:\n"
+                            for c in conflitos:
+                                texto += f"  • {c.get('disciplina', c.get('a', {}).get('disciplina', '?'))}: {c.get('desc')}\n"
+                        else:
+                            texto = "Não foi possível encontrar horário."
+                        
+                        sugestao = data.get("sugestao", {})
+                        if sugestao.get("ok"):
+                            texto += "\nSugestão alternativa disponível."
+                        
+                        await utils.reply(self, to_user, {"msg": texto})
+                else:
+                    # Outros tipos de resposta do horários
+                    erro = data.get("erro", "")
+                    if erro:
+                        await utils.reply(self, to_user, {"msg": f"Erro nos horários: {erro}"})
+                    else:
+                        await utils.reply(self, to_user, {"msg": "Resposta do agente de horários recebida."})
+                return
+
             if sender.startswith("financeiro@"):
                 to_user = data.get("to_user")
                 if not to_user: return
@@ -214,7 +259,7 @@ class AssistenteAgent(Agent):
                     if data["debt"] == "yes":
                         if ctx.get("pendente") == "fazer_pagamento":
                             op = ctx.get("pendente")
-                            await self.agent.strategy.processar_financeiro(self.agent, self, to_user, op, ctx["slots"], ctx)
+                            await self.agent.strategy.processar_financeiro(self, to_user, op, ctx["slots"], ctx)
                             ctx["pendente"] = None
                             return
 
@@ -223,7 +268,10 @@ class AssistenteAgent(Agent):
                     else:
                         op = ctx.get("pendente")
                         if op:
-                            if op in self.agent.INTENTS_ACADEMIC:
+                            # Se for inscrição, usar função direta (já validou dados)
+                            if op == "inscricao":
+                                await self.agent.strategy._enviar_inscricao(self, to_user, ctx["slots"], ctx)
+                            elif op in self.agent.INTENTS_ACADEMIC:
                                 await self.agent.strategy.processar_academico(self, to_user, op, ctx["slots"], ctx)
                             elif op in self.agent.INTENTS_FINANCIAL:
                                 await self.agent.strategy.processar_financeiro(self, to_user, op, ctx["slots"], ctx)
@@ -294,7 +342,4 @@ class AssistenteAgent(Agent):
                     await utils.reply(self, to_user, {"msg": texto})
                     return
 
-            target_user = data.get("to_user")
-            if target_user:
-                await utils.reply(self, target_user, data)
-                return
+

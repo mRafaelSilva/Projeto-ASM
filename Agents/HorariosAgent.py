@@ -66,8 +66,6 @@ class HorariosAgent(Agent):
         t_req.set_metadata("performative", "request")
         self.add_behaviour(self.HandleRequestsBehaviour(), t_req)
 
-        print("[Horarios] ready")
-
     # -------------------- DATA --------------------
 
     def _load_data(self) -> None:

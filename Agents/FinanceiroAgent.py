@@ -19,7 +19,7 @@ class FinanceiroAgent(agent.Agent):
     """
 
     async def setup(self):
-        print(f"Financeiro {str(self.jid)} ativo.")
+        print(f"[Financeiro] {str(self.jid)} ativo.")
 
         # Caminho do ficheiro financeiro.json
         base_dir = os.path.dirname(os.path.dirname(__file__))
