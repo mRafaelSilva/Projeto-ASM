@@ -13,13 +13,29 @@
   },
   {
     "estudante_id": 202302,
-    "saldo": -250.0,
+    "saldo": 30.0,
     "isento_taxas": false,
-    "historico_pagamentos": []
+    "historico_pagamentos": [
+      {
+        "data": "2026-01-13T00:43:09",
+        "valor": 220.0,
+        "tipo": "Pagamento dívida (simulado)"
+      },
+      {
+        "data": "2026-01-13T00:43:18",
+        "valor": 35.0,
+        "tipo": "Pagamento dívida (simulado)"
+      },
+      {
+        "data": "2026-01-13T00:49:36",
+        "valor": 25.0,
+        "tipo": "Pagamento dívida (simulado)"
+      }
+    ]
   },
   {
     "estudante_id": 12,
-    "saldo": 0.0,
+    "saldo": 20.0,
     "isento_taxas": false,
     "historico_pagamentos": [
       {
@@ -30,6 +46,11 @@
       {
         "data": "2026-01-11T18:22:07",
         "valor": 50.0,
+        "tipo": "Pagamento dívida (simulado)"
+      },
+      {
+        "data": "2026-01-11T22:36:51",
+        "valor": 20.0,
         "tipo": "Pagamento dívida (simulado)"
       }
     ]

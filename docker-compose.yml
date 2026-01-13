@@ -8,3 +8,18 @@ services:
       - "5222:5222"
     volumes:
       - ./openfire_data:/var/lib/openfire
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_asm
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    restart: always
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        "/usr/bin/ollama serve & sleep 2 && /usr/bin/ollama pull llama3.2 && wait",
+      ]
