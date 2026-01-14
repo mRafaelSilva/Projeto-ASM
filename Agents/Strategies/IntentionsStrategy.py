@@ -162,7 +162,10 @@ class IntentionsStrategy:
 
     async def processar_regulamentos(self, behaviour, user_jid, intencao, slots, ctx):
         if intencao == "listar_regulamentos":
-            payload = { "action": "listar_regulamentos", "to_user": user_jid }
+            payload = {
+                "action": "listar_regulamentos",
+                "to_user": user_jid
+            }
             await utils.forward_request(behaviour, "regulamentos@localhost", payload)
             return
 
@@ -172,7 +175,11 @@ class IntentionsStrategy:
                 await utils.ask_slot(behaviour, user_jid, "regulamento")
                 return
 
-            payload = { "action": "ver_regulamento", "regulamento": slots.get("regulamento"), "to_user": user_jid }
+            payload = {
+                "action": "ver_regulamento",
+                "regulamento": slots.get("regulamento"),
+                "to_user": user_jid
+            }
             await utils.forward_request(behaviour, "regulamentos@localhost", payload)
             return
 
@@ -181,8 +188,32 @@ class IntentionsStrategy:
                 ctx["awaiting"] = "regulamento"
                 await utils.ask_slot(behaviour, user_jid, "regulamento")
                 return
-            
-            payload = {"action": "inscrever_regulamento", "regulamento": slots.get("regulamento"), "numero_aluno": slots.get("numero_aluno"), "documentos": slots.get("documentos", []), "to_user": user_jid }
+
+            if not slots.get("numero_aluno"):
+                ctx["awaiting"] = "numero_aluno"
+                await utils.ask_slot(behaviour, user_jid, "numero_aluno")
+                return
+
+            payload = {
+                "action": "inscrever_regulamento",
+                "regulamento": slots.get("regulamento"),
+                "numero_aluno": slots.get("numero_aluno"),
+                "to_user": user_jid
+            }
+            await utils.forward_request(behaviour, "regulamentos@localhost", payload)
+            return
+
+        if intencao == "remover_inscricao_regulamento":
+            if not slots.get("numero_aluno"):
+                ctx["awaiting"] = "numero_aluno"
+                await utils.ask_slot(behaviour, user_jid, "numero_aluno")
+                return
+
+            payload = {
+                "action": "remover_inscricao_regulamento",
+                "numero_aluno": slots.get("numero_aluno"),
+                "to_user": user_jid
+            }
             await utils.forward_request(behaviour, "regulamentos@localhost", payload)
             return
 
@@ -192,6 +223,16 @@ class IntentionsStrategy:
                 await utils.ask_slot(behaviour, user_jid, "regulamento")
                 return
 
-            payload = { "action": "verificar_inscricao_regulamento", "regulamento": slots.get("regulamento"), "numero_aluno": slots.get("numero_aluno"), "to_user": user_jid }
+            if not slots.get("numero_aluno"):
+                ctx["awaiting"] = "numero_aluno"
+                await utils.ask_slot(behaviour, user_jid, "numero_aluno")
+                return
+
+            payload = {
+                "action": "verificar_inscricao_regulamento",
+                "regulamento": slots.get("regulamento"),
+                "numero_aluno": slots.get("numero_aluno"),
+                "to_user": user_jid
+            }
             await utils.forward_request(behaviour, "regulamentos@localhost", payload)
             return

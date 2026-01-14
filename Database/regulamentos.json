@@ -8,18 +8,7 @@
       "Possibilidade de horários ajustados.",
       "Acesso a época especial de exames."
     ],
-    "link_info": "https://dre.pt/dre/legislacao-consolidada/lei/2009-34546475"
-  },
-
-  "estatuto-especial": {
-    "descricao": "Estatuto atribuído a estudantes em condições pessoais específicas que justificam adaptações ao regime académico.",
-    "docs_obrigatorios": ["atestado"],
-    "ects_max_ano": 60,
-    "regras": [
-      "Adaptações na avaliação.",
-      "Acompanhamento académico diferenciado."
-    ],
-    "link_info": "https://www.dges.gov.pt/pt/pagina/estudantes-com-necessidades-educativas-especiais"
+    "link_info": "https://diariodarepublica.pt/dr/detalhe/lei/116-1997-675641"
   },
 
   "necessidades-educativas-especiais": {
@@ -31,7 +20,7 @@
       "Acesso a recursos de apoio pedagógico.",
       "Possibilidade de prolongamento de prazos."
     ],
-    "link_info": "https://www.dges.gov.pt/pt/pagina/estudantes-com-necessidades-educativas-especiais"
+    "link_info": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/54-2018-115652961"
   },
 
   "atleta-alta-competicao": {
@@ -43,7 +32,7 @@
       "Possibilidade de alteração de datas de avaliação.",
       "Acesso a época especial."
     ],
-    "link_info": "https://dre.pt/dre/legislacao-consolidada/decreto-lei/2012-55378916"
+    "link_info": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/125-1995-527406"
   },
 
   "dirigente-associativo": {
@@ -54,7 +43,7 @@
       "Justificação de faltas por motivos associativos.",
       "Flexibilização pontual de prazos académicos."
     ],
-    "link_info": "https://dre.pt/dre/legislacao-consolidada/lei/2009-34546475"
+    "link_info": "https://diariodarepublica.pt/dr/detalhe/lei/33-1987-420231"
   },
 
   "mobilidade-internacional": {
@@ -65,18 +54,6 @@
       "Reconhecimento automático das UC aprovadas.",
       "Acompanhamento pelo gabinete de relações internacionais."
     ],
-    "link_info": "https://www.dges.gov.pt/pt/pagina/mobilidade-internacional"
-  },
-
-  "bombeiro-voluntario": {
-    "descricao": "Estatuto atribuído a estudantes que exercem atividade como bombeiros voluntários em serviço ativo.",
-    "docs_obrigatorios": ["declaracao_corporacao"],
-    "ects_max_ano": 60,
-    "regras": [
-      "Justificação de faltas por ocorrências.",
-      "Direito a época especial de avaliação.",
-      "Flexibilização de prazos em situações excecionais."
-    ],
-    "link_info": "https://dre.pt/dre/legislacao-consolidada/decreto-lei/2007-34546464"
+    "link_info": "https://diariodarepublica.pt/dr/detalhe/decreto-lei/20-2025-911303062"
   }
 }

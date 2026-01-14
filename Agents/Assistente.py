@@ -25,7 +25,7 @@ def verificar_estudante(numero_aluno: str) -> dict | None:
         return None
 
 class AssistenteAgent(Agent):
-    INTENTS_REGULATION: Set[str] = {"listar_regulamentos", "ver_regulamento", "inscrever_regulamento", "verificar_inscricao_regulamento"}
+    INTENTS_REGULATION: Set[str] = {"listar_regulamentos", "ver_regulamento", "inscrever_regulamento", "remover_inscricao_regulamento", "verificar_inscricao_regulamento"}
     INTENTS_GENERAL: Set[str] = {"saudacao", "ajuda", "desconhecida"}
     INTENTS_ACADEMIC: Set[str] = {"inscricao", "horarios"}
     INTENTS_FINANCIAL: Set[str] = {"fazer_pagamento", "ver_saldo"}
@@ -309,7 +309,69 @@ class AssistenteAgent(Agent):
                     return
 
                 action = data.get("action")
+                
+                erro = data.get("erro") or data.get("error")
+                regulamento = data.get("regulamento")
+                regs_disponiveis = data.get("regulamentos_disponiveis", [])
 
+               
+                if erro:
+                    if erro == "unknown_action":
+                        esperadas = data.get("expected", [])
+                        recebida = data.get("got")
+                    
+                        if esperadas:
+                            texto = (
+                                "A ação pedida não é suportada.\n"
+                                "Ações disponíveis:\n" +
+                                "\n".join(f"- {a}" for a in esperadas)
+                            )
+                        else:
+                            texto = "A ação pedida não é suportada."
+                    
+                        if recebida:
+                            texto += f"\nAção recebida: {recebida}"
+                    
+                        await utils.reply(self, to_user, {"msg": texto})
+                        return
+
+                    if erro == "regulamento_inexistente":
+                        if regs_disponiveis:
+                            texto = (
+                                f"O regulamento '{regulamento}' não existe.\n"
+                                "Regulamentos disponíveis:\n" +
+                                "\n".join(f"- {r}" for r in regs_disponiveis)
+                            )
+                        else:
+                            texto = f"O regulamento '{regulamento}' não existe."
+                        await utils.reply(self, to_user, {"msg": texto})
+                        return
+
+                    if erro == "aluno_inexistente":
+                        texto = "O número de aluno indicado não existe."
+                        await utils.reply(self, to_user, {"msg": texto})
+                        return
+
+                    if erro == "ja_tem_estatuto":
+                        estatuto_atual = data.get("estatuto_atual", "desconhecido")
+                        texto = (
+                            "Não é possível atribuir novo estatuto.\n"
+                            f"Estatuto atual: {estatuto_atual}."
+                        )
+                        await utils.reply(self, to_user, {"msg": texto})
+                        return
+
+                    if erro == "nao_tem_estatuto_especial":
+                        texto = "O estudante não tem nenhum estatuto especial para remover."
+                        await utils.reply(self, to_user, {"msg": texto})
+                        return
+
+                    # fallback genérico
+                    texto = f"Ocorreu um erro: {erro}"
+                    await utils.reply(self, to_user, {"msg": texto})
+                    return
+
+                # ---------------- SUCESSO ----------------
                 if action == "listar_regulamentos":
                     regs = data.get("regulamentos", [])
 
@@ -331,8 +393,8 @@ class AssistenteAgent(Agent):
                     else:
                         texto = (
                             f"Regulamento: {nome}\n"
-                            f"Descrição: {dados.get('descricao')}\n"
-                            f"ECTS máximos/ano: {dados.get('ects_max_ano')}\n"
+                            f"Descrição: {dados.get('descricao', '—')}\n"
+                            f"ECTS máximos/ano: {dados.get('ects_max_ano', '—')}\n"
                         )
 
                         regras = dados.get("regras", [])
@@ -341,5 +403,25 @@ class AssistenteAgent(Agent):
 
                     await utils.reply(self, to_user, {"msg": texto})
                     return
+
+                if action == "inscrever_regulamento":
+                    texto = f"Inscrição no regulamento '{regulamento}' efetuada com sucesso."
+                    await utils.reply(self, to_user, {"msg": texto})
+                    return
+
+                if action == "remover_inscricao_regulamento":
+                    texto = "O estatuto especial foi removido com sucesso."
+                    await utils.reply(self, to_user, {"msg": texto})
+                    return
+
+                if action == "verificar_inscricao_regulamento":
+                    inscrito = data.get("inscrito", False)
+                    if inscrito:
+                        texto = f"O estudante está inscrito no regulamento '{regulamento}'."
+                    else:
+                        texto = f"O estudante não está inscrito no regulamento '{regulamento}'."
+                    await utils.reply(self, to_user, {"msg": texto})
+                    return
+
 
 

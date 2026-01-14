@@ -182,6 +182,15 @@ def extrair_intencao(texto: str) -> str:
     if re.search(r"\b(regulamentos?|estatutos?)\b.*\b(existem|dispon[ií]veis|lista|todos)\b", texto):
         return "listar_regulamentos"
 
+    if re.search(r"\b(inscrever|aderir|aceitar|assinar|pedir)\b.*\b(regulamento|estatuto)\b", texto):
+        return "inscrever_regulamento"
+
+    if re.search(r"\b(remover|cancelar|anular|desistir|retirar)\b.*\b(regulamento|estatuto)\b", texto):
+        return "remover_inscricao_regulamento"
+
+    if re.search(r"\b(estou|já)\b.*\b(inscrito|registado|aceitei)\b.*\b(regulamento|estatuto)\b", texto):
+        return "verificar_inscricao_regulamento"
+
     return "desconhecida"
 
 
@@ -240,6 +249,7 @@ Financeiro
 Regulamentos
    • "Listar regulamentos"
    • "Consultar regulamento de avaliação"
+   • "Inscrever em regulamento trabalhador-estudante"
 
 Como posso ajudar-te hoje?
 """
