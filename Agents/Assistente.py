@@ -214,27 +214,18 @@ class AssistenteAgent(Agent):
                 acao = data.get("acao", "")
                 
                 if acao == "check_schedule":
-                    if ok:
-                        detalhes = data.get("detalhes", [])
+                    # Ver horários - sempre mostra os detalhes (capacidade é só para inscrição)
+                    detalhes = data.get("detalhes", [])
+                    if detalhes:
                         texto = "Horário encontrado:\n"
                         for item in detalhes:
                             if not item.get("erro"):
                                 texto += f"  • {item.get('disciplina')} ({item.get('turno')}): {item.get('dia')} {item.get('inicio')}-{item.get('fim')} | Sala: {item.get('sala')}\n"
+                            else:
+                                texto += f"  • {item.get('disciplina')}: {item.get('erro')}\n"
                         await utils.reply(self, to_user, {"msg": texto})
                     else:
-                        conflitos = data.get("conflitos", [])
-                        if conflitos:
-                            texto = "Conflitos encontrados:\n"
-                            for c in conflitos:
-                                texto += f"  • {c.get('disciplina', c.get('a', {}).get('disciplina', '?'))}: {c.get('desc')}\n"
-                        else:
-                            texto = "Não foi possível encontrar horário."
-                        
-                        sugestao = data.get("sugestao", {})
-                        if sugestao.get("ok"):
-                            texto += "\nSugestão alternativa disponível."
-                        
-                        await utils.reply(self, to_user, {"msg": texto})
+                        await utils.reply(self, to_user, {"msg": "Não foi possível encontrar horário para esta disciplina."})
                 else:
                     # Outros tipos de resposta do horários
                     erro = data.get("erro", "")

@@ -106,6 +106,34 @@ def get_disciplinas_disponiveis() -> List[str]:
     return list(_DISC_IDS)
 
 
+def get_disciplinas_curso(curso_id: str) -> List[str]:
+    """Retorna lista de disciplinas de um curso específico"""
+    try:
+        with open(_DISC_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict) and curso_id in data:
+            return [d["id"] for d in data[curso_id] if isinstance(d, dict) and "id" in d]
+        return []
+    except Exception:
+        return []
+
+
+def get_estudante_by_id(numero_aluno: str) -> Optional[Dict[str, Any]]:
+    """Obtém os dados de um estudante pelo número"""
+    if not numero_aluno:
+        return None
+    try:
+        estudantes_path = os.path.join(_BASE_DIR, "Database", "estudantes.json")
+        with open(estudantes_path, "r", encoding="utf-8") as f:
+            estudantes = json.load(f)
+        for est in estudantes:
+            if str(est.get("id")) == str(numero_aluno):
+                return est
+        return None
+    except Exception:
+        return None
+
+
 def extrair_disciplinas(texto: str) -> List[str]:
     tokens = re.findall(r"[A-Za-z0-9_]+", (texto or "").upper())
     return [t for t in tokens if t in _DISC_IDS]
@@ -234,22 +262,31 @@ def extrair_slots(*args) -> Dict[str, Any]:
     return slots
 
 HELP_MESSAGE = """
-Olá! Sou a tua Secretaria Online. 
+Sou a Secretaria Online da Universidade.
 
-Estou aqui para facilitar a tua vida académica. Podes pedir-me ajuda para:
+AUTENTICACAO
+  - login [numero_aluno]: entra na sessao com o teu numero de estudante.
+  - logout: termina a sessao atual.
 
-Académico
-   • "Inscrever em SO1"
-   • "Ver horário de LEI"
+ACADEMICO
+  - Inscrever em disciplina: inscreve-te numa unidade curricular do teu curso.
+    Exemplo: inscrever em SO1
+  - Ver horario: consulta horarios de disciplinas de um curso.
+    Exemplo: ver horario de ALGEBRA
 
-Financeiro
-   • "Ver saldo"
-   • "Pagar 50 euros"
+FINANCEIRO
+  - Ver saldo: consulta o teu saldo e divida atual.
+  - Pagar divida: efetua um pagamento para liquidar divida.
+    Exemplo: pagar 50 euros
 
-Regulamentos
-   • "Listar regulamentos"
-   • "Consultar regulamento de avaliação"
-   • "Inscrever em regulamento trabalhador-estudante"
+REGULAMENTOS E ESTATUTOS
+  - Listar regulamentos: mostra todos os regulamentos e estatutos disponiveis.
+  - Ver regulamento: consulta os detalhes de um regulamento especifico.
+    Exemplo: ver regulamento trabalhador-estudante
+  - Inscrever em regulamento: adere a um estatuto especial.
+    Exemplo: inscrever no estatuto trabalhador-estudante
+  - Remover inscricao de regulamento: remove o teu estatuto especial atual.
+  - Verificar inscricao em regulamento: verifica se estas inscrito num estatuto.
 
-Como posso ajudar-te hoje?
+NOTA: Algumas operacoes requerem login. Usa 'login [numero]' primeiro. Para saír pressione 'CTRL+C'.
 """

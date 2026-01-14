@@ -34,12 +34,17 @@ class IntentionsStrategy:
 
     async def processar_academico(self, behaviour, user_jid, intencao, slots, ctx):
         if intencao == "inscricao":
-            # Validar curso
+            # Usar curso da sessão se disponível
             if not slots.get("curso"):
-                ctx["awaiting"] = "curso"
-                cursos = utils.get_cursos_disponiveis()
-                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": f"Qual o curso? (Disponíveis: {', '.join(cursos)})"})
-                return
+                estudante = utils.get_estudante_by_id(ctx.get("sessao_aluno"))
+                if estudante and estudante.get("curso_id"):
+                    ctx["slots"]["curso"] = estudante["curso_id"]
+                    slots["curso"] = estudante["curso_id"]
+                else:
+                    ctx["awaiting"] = "curso"
+                    cursos = utils.get_cursos_disponiveis()
+                    await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": f"Qual o curso? (Disponíveis: {', '.join(cursos)})"})
+                    return
             
             # Verificar se curso existe
             if not utils.validar_curso(slots.get("curso")):
@@ -60,11 +65,18 @@ class IntentionsStrategy:
                 disc = disc[0] if disc else None
             
             if not disc or not utils.validar_disciplina(disc):
-                if disc:
-                    await utils.reply(behaviour, user_jid, {"msg": f"Disciplina '{disc}' não encontrada."})
+                curso = slots.get("curso")
+                discs_curso = utils.get_disciplinas_curso(curso) if curso else []
                 ctx["slots"]["disciplina"] = None
                 ctx["awaiting"] = "disciplina"
-                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
+                if disc:
+                    if discs_curso:
+                        prompt = f"Disciplina '{disc}' não encontrada no curso {curso}. Disponíveis: {', '.join(discs_curso)}"
+                    else:
+                        prompt = f"Disciplina '{disc}' não encontrada. Qual a disciplina?"
+                else:
+                    prompt = f"Qual a disciplina? (Disponíveis: {', '.join(discs_curso)})" if discs_curso else "Qual a disciplina? (ex: SO1, ALGEBRA)"
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": prompt})
                 return
             
             student_id = ctx["slots"].get("numero_aluno")
@@ -82,7 +94,7 @@ class IntentionsStrategy:
             return
 
         if intencao == "horarios":
-            # Validar curso
+            # Ver horarios é público - perguntar sempre o curso
             if not slots.get("curso"):
                 ctx["awaiting"] = "curso"
                 cursos = utils.get_cursos_disponiveis()
@@ -98,9 +110,11 @@ class IntentionsStrategy:
                 return
             
             # Validar disciplina
+            discs_curso = utils.get_disciplinas_curso(curso)
             if not slots.get("disciplina"):
                 ctx["awaiting"] = "disciplina"
-                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
+                prompt = f"Qual a disciplina? (Disponíveis: {', '.join(discs_curso)})" if discs_curso else "Qual a disciplina? (ex: SO1, ALGEBRA)"
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": prompt})
                 return
             
             # Normalizar disciplina
@@ -109,11 +123,16 @@ class IntentionsStrategy:
                 disc = disc[0] if disc else None
             
             if not disc or not utils.validar_disciplina(disc):
-                if disc:
-                    await utils.reply(behaviour, user_jid, {"msg": f"Disciplina '{disc}' não encontrada."})
                 ctx["slots"]["disciplina"] = None
                 ctx["awaiting"] = "disciplina"
-                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": "Qual a disciplina? (ex: SO1, ALGEBRA)"})
+                if disc:
+                    if discs_curso:
+                        prompt = f"Disciplina '{disc}' não encontrada no curso {curso}. Disponíveis: {', '.join(discs_curso)}"
+                    else:
+                        prompt = f"Disciplina '{disc}' não encontrada. Qual a disciplina?"
+                else:
+                    prompt = f"Qual a disciplina? (Disponíveis: {', '.join(discs_curso)})" if discs_curso else "Qual a disciplina? (ex: SO1, ALGEBRA)"
+                await utils.reply(behaviour, user_jid, {"type": "ask", "prompt": prompt})
                 return
 
             payload = {

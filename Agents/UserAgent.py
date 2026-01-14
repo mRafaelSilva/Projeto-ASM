@@ -143,5 +143,6 @@ class UserAgent(Agent):
 
             # Mensagem normal informativa
             mensagem = body.get("msg", body) if isinstance(body, dict) else body
-            print(f"\n[Assistente]: {mensagem}")     
-            self.agent.lock_input.set()
+            print(f"\n[Assistente]: {mensagem}")
+            if not mensagem.startswith("A processar"):
+                self.agent.lock_input.set()

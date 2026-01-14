@@ -11,6 +11,9 @@ class AcademicoAgent(agent.Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                # Recarregar dados frescos para garantir consistência com outros agentes
+                self.agent.load_data()
+                
                 p = msg.get_metadata('performative')
                 if p == 'inscricao':
                     request = self.agent.decode_message(msg.body)

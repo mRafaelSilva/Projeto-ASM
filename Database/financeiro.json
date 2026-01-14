@@ -57,9 +57,20 @@
   },
   {
     "estudante_id": 555,
-    "saldo": -1500.0,
+    "saldo": -1400.0,
     "isento_taxas": false,
-    "historico_pagamentos": []
+    "historico_pagamentos": [
+      {
+        "data": "2026-01-14T20:16:00",
+        "valor": 50.0,
+        "tipo": "Pagamento dívida (simulado)"
+      },
+      {
+        "data": "2026-01-14T21:02:48",
+        "valor": 50.0,
+        "tipo": "Pagamento dívida (simulado)"
+      }
+    ]
   },
   {
     "estudante_id": 777,

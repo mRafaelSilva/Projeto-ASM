@@ -4,14 +4,26 @@
     "nome": "Ana Silva",
     "curso_id": "L-EI",
     "ano_frequencia": 2,
-    "estatuto": "Regular",
+    "estatuto": "Trabalhador Estudante",
     "email": "ana.silva@univ.pt",
     "curriculo": {
       "aprovadas": [
-        { "id": "MAT1", "nota": 15, "data": "2024-02-10" },
-        { "id": "PROG1", "nota": 18, "data": "2024-02-15" }
+        {
+          "id": "MAT1",
+          "nota": 15,
+          "data": "2024-02-10"
+        },
+        {
+          "id": "PROG1",
+          "nota": 18,
+          "data": "2024-02-15"
+        }
       ],
-      "inscricoes_ativas": ["ALGEBRA", "SO1"]
+      "inscricoes_ativas": [
+        "ALGEBRA",
+        "SO1",
+        "MATEMATICA"
+      ]
     }
   },
   {
@@ -21,7 +33,13 @@
     "ano_frequencia": 1,
     "estatuto": "Trabalhador-Estudante",
     "email": "bruno.santos@univ.pt",
-    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["ECON1"] }
+    "curriculo": {
+      "aprovadas": [],
+      "inscricoes_ativas": [
+        "ECON1",
+        "MARKETING"
+      ]
+    }
   },
   {
     "id": 12,
@@ -31,7 +49,13 @@
     "estatuto": "Regular",
     "email": "joao.teste@univ.pt",
     "curriculo": {
-      "aprovadas": [{ "id": "SO1", "nota": 10, "data": "2023-06-20" }],
+      "aprovadas": [
+        {
+          "id": "SO1",
+          "nota": 10,
+          "data": "2023-06-20"
+        }
+      ],
       "inscricoes_ativas": []
     }
   },
@@ -42,7 +66,12 @@
     "ano_frequencia": 1,
     "estatuto": "Regular",
     "email": "maria.divida@univ.pt",
-    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["IA"] }
+    "curriculo": {
+      "aprovadas": [],
+      "inscricoes_ativas": [
+        "IA"
+      ]
+    }
   },
   {
     "id": 777,
@@ -51,6 +80,11 @@
     "ano_frequencia": 1,
     "estatuto": "Regular",
     "email": "carlos.rico@univ.pt",
-    "curriculo": { "aprovadas": [], "inscricoes_ativas": ["ML"] }
+    "curriculo": {
+      "aprovadas": [],
+      "inscricoes_ativas": [
+        "ML"
+      ]
+    }
   }
 ]
